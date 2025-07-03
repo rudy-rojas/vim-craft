@@ -1,0 +1,416 @@
+/* Gruvbox Dark Hard Color Palette */
+:root {
+  --bg0-hard: #1d2021;
+  --bg0: #282828;
+  --bg1: #3c3836;
+  --bg2: #504945;
+  --bg3: #665c54;
+  --bg4: #7c6f64;
+
+  --fg0: #fbf1c7;
+  --fg1: #ebdbb2;
+  --fg2: #d5c4a1;
+  --fg3: #bdae93;
+  --fg4: #a89984;
+
+  --red: #fb4934;
+  --green: #b8bb26;
+  --yellow: #fabd2f;
+  --blue: #83a598;
+  --purple: #d3869b;
+  --aqua: #8ec07c;
+  --orange: #fe8019;
+
+  --gray: #928374;
+  --red-dim: #cc241d;
+  --green-dim: #98971a;
+  --yellow-dim: #d79921;
+  --blue-dim: #458588;
+  --purple-dim: #b16286;
+  --aqua-dim: #689d6a;
+  --orange-dim: #d65d0e;
+}
+
+body {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  background: var(--bg0-hard);
+  color: var(--fg1);
+  margin: 0;
+  padding: 20px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+h1 {
+  text-align: center;
+  color: var(--yellow);
+  text-shadow: 2px 2px 4px var(--bg0-hard);
+  margin-bottom: 30px;
+}
+
+/* Form Styles */
+.form-section {
+  background: var(--bg1);
+  border-radius: 8px;
+  padding: 25px;
+  border: 1px solid var(--bg2);
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  color: var(--yellow);
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-control {
+  width: 100%;
+  background: var(--bg0);
+  border: 1px solid var(--bg2);
+  border-radius: 4px;
+  color: var(--fg1);
+  font-family: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+select.form-control {
+  padding: 10px;
+  cursor: pointer;
+}
+
+select.form-control option {
+  background: var(--bg0);
+  color: var(--fg1);
+}
+
+textarea.form-control {
+  padding: 12px;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.selection-info {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.convert-button {
+  background: var(--orange);
+  color: var(--bg0-hard);
+  border: none;
+  padding: 12px 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.convert-button:hover {
+  background: var(--orange-dim);
+}
+
+.convert-button:disabled {
+  background: var(--gray);
+  cursor: not-allowed;
+}
+
+/* Results Section */
+.results-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.result-panel {
+  background: var(--bg1);
+  border-radius: 8px;
+  border: 1px solid var(--bg2);
+  overflow: hidden;
+}
+
+.panel-header {
+  background: var(--orange);
+  color: var(--bg0-hard);
+  padding: 12px 16px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.copy-button {
+  background: var(--bg0-hard);
+  color: var(--orange);
+  border: 1px solid var(--orange);
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.copy-button:hover {
+  background: var(--orange);
+  color: var(--bg0-hard);
+}
+
+.editor-panel {
+  background: var(--bg0);
+  border-radius: 0 0 6px 6px;
+}
+
+.code-block {
+  background: var(--bg0-hard);
+  padding: 16px;
+  font-family: inherit;
+  line-height: 1.5;
+  min-height: 200px;
+  overflow-x: auto;
+}
+
+.placeholder {
+  color: var(--gray);
+  font-style: italic;
+}
+
+.source-panel {
+  background: var(--bg0-hard);
+  padding: 16px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.source-panel pre {
+  margin: 0;
+  color: var(--fg2);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.status-bar {
+  background: var(--orange);
+  color: var(--bg0-hard);
+  padding: 6px 12px;
+  font-size: 12px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Syntax highlighting classes */
+/* HTML/XML */
+.tag-bracket {
+  color: var(--gray);
+}
+.tag-name {
+  color: var(--red);
+}
+.attribute-name {
+  color: var(--yellow);
+}
+.attribute-value {
+  color: var(--green);
+}
+.equals {
+  color: var(--fg1);
+}
+
+/* JavaScript/TypeScript */
+.js-keyword {
+  color: var(--red);
+}
+.js-function {
+  color: var(--yellow);
+}
+.js-string {
+  color: var(--green);
+}
+.js-number {
+  color: var(--purple);
+}
+.js-boolean {
+  color: var(--orange);
+}
+.js-operator {
+  color: var(--aqua);
+}
+.js-variable {
+  color: var(--blue);
+}
+.js-comment {
+  color: var(--gray);
+  font-style: italic;
+}
+.js-method {
+  color: var(--yellow);
+}
+.js-property {
+  color: var(--blue);
+}
+
+/* Java */
+.java-keyword {
+  color: var(--red);
+}
+.java-type {
+  color: var(--yellow);
+}
+.java-string {
+  color: var(--green);
+}
+.java-annotation {
+  color: var(--orange);
+}
+.java-modifier {
+  color: var(--purple);
+}
+.java-method {
+  color: var(--yellow);
+}
+
+/* Swift */
+.swift-keyword {
+  color: var(--red);
+}
+.swift-type {
+  color: var(--yellow);
+}
+.swift-string {
+  color: var(--green);
+}
+.swift-attribute {
+  color: var(--orange);
+}
+.swift-number {
+  color: var(--purple);
+}
+
+/* Python */
+.py-keyword {
+  color: var(--red);
+}
+.py-function {
+  color: var(--yellow);
+}
+.py-string {
+  color: var(--green);
+}
+.py-decorator {
+  color: var(--orange);
+}
+.py-builtin {
+  color: var(--blue);
+}
+.py-number {
+  color: var(--purple);
+}
+
+/* CSS */
+.css-selector {
+  color: var(--red);
+}
+.css-property {
+  color: var(--blue);
+}
+.css-value {
+  color: var(--green);
+}
+.css-unit {
+  color: var(--purple);
+}
+.css-pseudo {
+  color: var(--orange);
+}
+
+/* Cursor styles */
+.cursor {
+  background: var(--fg0);
+  color: var(--bg0-hard);
+  animation: blink 1s infinite;
+  position: relative;
+}
+
+.cursor-insert {
+  position: relative;
+}
+
+.cursor-insert::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--fg0);
+  animation: blink 1s infinite;
+  z-index: 1;
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* Visual selection */
+.visual-selection {
+  background: rgba(131, 165, 152, 0.3);
+  position: relative;
+}
+
+/* Code lines */
+.code-line {
+  display: block;
+  white-space: pre;
+}
+
+.info-text {
+  margin-top: 30px;
+  text-align: center;
+  color: var(--gray);
+  font-size: 12px;
+}
+
+.info-text strong {
+  color: var(--yellow);
+}
+
+.status-bar-ide {
+  font-size: 11px;
+  background-color: #32302f;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .results-section {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
