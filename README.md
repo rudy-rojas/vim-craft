@@ -4,7 +4,7 @@ A web-based tool that simulates Neovim's visual modes and syntax highlighting fo
 
 ## 🚀 Demo
 
-**Try it live:** [https://rudy-rojas.github.io/nvim-view-simulator/](https://rudy-rojas.github.io/nvim-view-simulator/)
+**Try it live:** [https://rudy-rojas.github.io/vim-craft/](https://rudy-rojas.github.io/vim-craft/)
 
 ## ✨ Features
 
