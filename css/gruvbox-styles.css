@@ -1,3 +1,4 @@
+
 /* Gruvbox Dark Hard Color Palette */
 :root {
   --bg0-hard: #1d2021;
@@ -322,6 +323,10 @@ textarea.form-control {
 .py-number {
   color: var(--purple);
 }
+.py-comment {
+  color: var(--gray);
+  font-style: italic;
+}
 
 /* CSS */
 .css-selector {
@@ -381,6 +386,40 @@ textarea.form-control {
   position: relative;
 }
 
+/* Visual block cursor - NEW: Cursor de bloque animado para modo Visual */
+.visual-block-cursor {
+  color: var(--bg0-hard) !important; /* Color del texto contrastante */
+  display: inline-block;
+  position: relative;
+  background: transparent; /* Sin fondo directo */
+  z-index: 10; /* El carácter al frente de todo */
+}
+
+.visual-block-cursor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 100%; /* Ancho inicial completo */
+  background-color: #fbf1c7; /* Color más suave y claro */
+  animation: cursor-width 1s infinite steps(1, end); /* Cambio abrupto de ancho */
+  transform-origin: left center; /* Mantiene el lado izquierdo fijo */
+  z-index: -1; /* Cursor detrás del texto */
+}
+
+@keyframes cursor-width {
+  0% {
+    transform: scaleX(1); /* 100% ancho */
+  }
+  50% {
+    transform: scaleX(0.85); /* 85% ancho - cambio más sutil */
+  }
+  100% {
+    transform: scaleX(1); /* 100% ancho */
+  }
+}
+
 /* Code lines */
 .code-line {
   display: block;
@@ -414,3 +453,16 @@ textarea.form-control {
     gap: 8px;
   }
 }
+
+.block-cursor {
+  background-color: #fabd2f;
+  display: inline-block;
+  animation: pulse-cursor 1s infinite;
+  color: black;
+}
+
+.visual-highlight {
+  background-color: #665c54;
+  color: #fbf1c7;
+}
+    

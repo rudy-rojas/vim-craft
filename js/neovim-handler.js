@@ -1,3 +1,4 @@
+
 // Token-based syntax highlighting system
 class Token {
   constructor(type, value, start, end) {
@@ -7,6 +8,7 @@ class Token {
     this.end = end;
     this.cursor = null;      // Para efectos de cursor
     this.selected = false;   // Para selección visual
+    this.isLastSelectedChar = false; // NEW: Para marcar el último carácter seleccionado
   }
 }
 
@@ -596,6 +598,9 @@ class VisualEffectsProcessor {
   applySelection(tokens, selectionStart, selectionEnd) {
     const result = [...tokens];
     
+    // NEW: Calculamos la posición del último carácter seleccionado
+    const lastSelectedPosition = selectionEnd - 1;
+    
     for (let i = 0; i < result.length; i++) {
       const token = result[i];
       
@@ -605,7 +610,7 @@ class VisualEffectsProcessor {
         const overlapEnd = Math.min(token.end, selectionEnd);
         
         if (overlapStart < overlapEnd) {
-          const newTokens = this.splitTokenForSelection(token, overlapStart, overlapEnd);
+          const newTokens = this.splitTokenForSelection(token, overlapStart, overlapEnd, lastSelectedPosition);
           result.splice(i, 1, ...newTokens);
           i += newTokens.length - 1; // Adjust index for added tokens
         }
@@ -615,7 +620,7 @@ class VisualEffectsProcessor {
     return result;
   }
 
-  splitTokenForSelection(token, selectionStart, selectionEnd) {
+  splitTokenForSelection(token, selectionStart, selectionEnd, lastSelectedPosition) {
     const tokens = [];
     const value = token.value;
     
@@ -630,20 +635,70 @@ class VisualEffectsProcessor {
       ));
     }
     
-    // Selection part
+    // Selection part - NEW: Detectamos si contiene el último carácter seleccionado
     const selectionStartInToken = Math.max(0, selectionStart - token.start);
     const selectionEndInToken = Math.min(value.length, selectionEnd - token.start);
     const selectionValue = value.substring(selectionStartInToken, selectionEndInToken);
     
     if (selectionValue) {
-      const selectionToken = new Token(
-        token.type,
-        selectionValue,
-        Math.max(token.start, selectionStart),
-        Math.min(token.end, selectionEnd)
-      );
-      selectionToken.selected = true;
-      tokens.push(selectionToken);
+      const actualSelectionStart = Math.max(token.start, selectionStart);
+      const actualSelectionEnd = Math.min(token.end, selectionEnd);
+      
+      // NEW: Verificamos si este token contiene el último carácter seleccionado
+      if (lastSelectedPosition >= actualSelectionStart && lastSelectedPosition < actualSelectionEnd) {
+        // Este token contiene el último carácter, necesitamos dividirlo
+        const lastCharRelativePos = lastSelectedPosition - actualSelectionStart;
+        
+        // Parte antes del último carácter (si existe)
+        if (lastCharRelativePos > 0) {
+          const beforeLastChar = selectionValue.substring(0, lastCharRelativePos);
+          const beforeToken = new Token(
+            token.type,
+            beforeLastChar,
+            actualSelectionStart,
+            actualSelectionStart + lastCharRelativePos
+          );
+          beforeToken.selected = true;
+          tokens.push(beforeToken);
+        }
+        
+        // El último carácter con cursor de bloque
+        const lastChar = selectionValue.charAt(lastCharRelativePos);
+        if (lastChar) {
+          const lastCharToken = new Token(
+            token.type,
+            lastChar,
+            lastSelectedPosition,
+            lastSelectedPosition + 1
+          );
+          lastCharToken.selected = true;
+          lastCharToken.isLastSelectedChar = true; // NEW: Marcamos como último carácter
+          tokens.push(lastCharToken);
+        }
+        
+        // Parte después del último carácter (si existe)
+        const remainingSelection = selectionValue.substring(lastCharRelativePos + 1);
+        if (remainingSelection) {
+          const afterToken = new Token(
+            token.type,
+            remainingSelection,
+            lastSelectedPosition + 1,
+            actualSelectionEnd
+          );
+          afterToken.selected = true;
+          tokens.push(afterToken);
+        }
+      } else {
+        // Este token NO contiene el último carácter, selección normal
+        const selectionToken = new Token(
+          token.type,
+          selectionValue,
+          actualSelectionStart,
+          actualSelectionEnd
+        );
+        selectionToken.selected = true;
+        tokens.push(selectionToken);
+      }
     }
     
     // After selection
@@ -711,8 +766,12 @@ class TokenRenderer {
       classes.push(token.cursor);
     }
     
-    // Add selection class
-    if (token.selected) {
+    // NEW: Add visual block cursor class for last selected character
+    if (token.isLastSelectedChar) {
+      classes.push('visual-block-cursor');
+    }
+    // Add selection class (but not if it's the last selected char, to avoid conflict)
+    else if (token.selected) {
       classes.push('visual-selection');
     }
     
@@ -830,6 +889,12 @@ class NeovimHandler {
       return;
     }
 
+    // For visual mode, require selection
+    if (mode === 'visual' && start === end) {
+      alert('Please select some text in the source code for Visual mode');
+      return;
+    }
+
     // For other modes, require selection
     if (mode !== 'visual' && start === end) {
       alert('Please select some text in the source code');
@@ -941,3 +1006,4 @@ class NeovimHandler {
 document.addEventListener('DOMContentLoaded', () => {
   new NeovimHandler();
 });
+    
