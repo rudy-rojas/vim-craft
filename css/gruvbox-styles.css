@@ -184,6 +184,7 @@ textarea.form-control {
   overflow-x: auto;
   position: relative;
   border-radius: 5px;
+  color: #ebdbb2;
 }
 
 .placeholder {
