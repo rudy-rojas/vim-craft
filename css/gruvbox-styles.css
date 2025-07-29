@@ -386,6 +386,9 @@ textarea.form-control {
 .visual-selection {
   background: rgba(131, 165, 152, 0.3);
   position: relative;
+  padding-top: 2px;
+  padding-bottom: 3px;
+   
 }
 
 /* Visual block cursor - NEW: Cursor de bloque animado para modo Visual */
@@ -474,4 +477,116 @@ textarea.form-control {
   background-color: #665c54;
   color: #fbf1c7;
 }
-    
+
+
+    /* TypeScript/JSX specific styles - Add these to your existing CSS */
+
+/* TypeScript Keywords */
+.ts-keyword {
+  color: var(--purple);
+  font-weight: bold;
+}
+
+/* TypeScript Types */
+.ts-type {
+  color: var(--blue);
+  font-weight: bold;
+}
+
+/* TypeScript Decorators */
+.ts-decorator {
+  color: var(--orange);
+  font-weight: bold;
+}
+
+/* Generic Types */
+.ts-generic {
+  color: var(--aqua);
+}
+
+/* Type Annotations */
+.ts-type-annotation {
+  color: var(--blue);
+}
+
+/* Template Literals */
+.ts-template-literal {
+  color: var(--green);
+  background: rgba(184, 187, 38, 0.1);
+}
+
+/* Arrow Functions */
+.ts-arrow {
+  color: var(--red);
+  font-weight: bold;
+}
+
+/* JSX/TSX Tags */
+.jsx-tag {
+  color: var(--red);
+  font-weight: bold;
+}
+
+/* JSX Attributes */
+.jsx-attribute {
+  color: var(--yellow);
+}
+
+/* React Specific Keywords */
+.react-keyword {
+  color: var(--aqua);
+  font-weight: bold;
+}
+
+/* NestJS Specific Keywords */
+.nestjs-keyword {
+  color: var(--purple);
+  font-weight: bold;
+  text-decoration: underline;
+  text-decoration-color: var(--purple-dim);
+}
+
+/* NextJS Specific Keywords */
+.nextjs-keyword {
+  color: var(--orange);
+  font-weight: bold;
+  text-decoration: underline;
+  text-decoration-color: var(--orange-dim);
+}
+
+/* ╔════════════════════════════════════════════════════════════════════╗
+   ║   TypeScript + NestJS + NextJS  –  Gruvbox Dark Hard estilos     ║
+   ╚════════════════════════════════════════════════════════════════════╝ */
+
+/* ---- Tokens de TypeScript ---- */
+.ts-keyword          { color: var(--red);        font-weight: bold; }
+.ts-generic          { color: var(--aqua);       font-style: italic; }
+.ts-type-annotation  { color: var(--blue); }
+.ts-interface        { color: var(--yellow);    font-weight: bold; }
+
+/* ---- Decoradores ---- */
+.ts-decorator,
+.ts-decorator span,
+.nestjs-decorator    { color: var(--orange);    font-weight: 500; }
+
+/* ---- NextJS específico ---- */
+.nextjs-keyword      { color: var(--purple);    font-weight: bold; }
+.nextjs-app-router   { color: var(--green);     font-style: italic; }
+
+/* ---- React Hooks ---- */
+.react-hooks         { color: var(--aqua);      font-weight: bold; }
+
+/* ---- Cursor / selección en modo Visual para tokens TS ---- */
+.visual-selection.ts-keyword,
+.visual-selection.ts-interface,
+.visual-selection.nextjs-keyword {
+  background: rgba(251, 189, 47, 0.25);  /* yellow con 25 % opacidad */
+}
+
+/* ---- Cursor de bloque en último carácter seleccionado ---- */
+.visual-block-cursor.ts-keyword,
+.visual-block-cursor.ts-interface,
+.visual-block-cursor.nestjs-decorator {
+  background-color: var(--fg0);  /* fondo claro */
+  color: var(--bg0-hard);        /* texto oscuro */
+}

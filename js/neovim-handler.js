@@ -203,6 +203,169 @@ class JavaScriptHighlighter extends BaseHighlighter {
   }
 }
 
+// TypeScript highlighter with NestJS, NextJS, and React support
+class TypeScriptHighlighter extends BaseHighlighter {
+  getPatterns() {
+    return [
+      // TypeScript/JavaScript decorators (NestJS)
+      {
+        type: 'decorator',
+        regex: '@[a-zA-Z_$][a-zA-Z0-9_$]*(?:\\([^)]*\\))?',
+        priority: 15
+      },
+      // JSX/TSX tags and components
+      {
+        type: 'jsx-tag',
+        regex: '</?[A-Z][a-zA-Z0-9]*(?:\\.[a-zA-Z0-9]+)*|</?[a-z][a-zA-Z0-9-]*',
+        priority: 14
+      },
+      // JSX attributes
+      {
+        type: 'jsx-attribute',
+        regex: '\\b[a-zA-Z-]+(?==)|\\{[^}]*\\}',
+        priority: 13
+      },
+      // TypeScript keywords
+      {
+        type: 'ts-keyword',
+        regex: '\\b(interface|type|enum|namespace|declare|abstract|readonly|keyof|typeof|extends|implements|public|private|protected|static|async|await)\\b',
+        priority: 12
+      },
+      // React specific keywords and hooks
+      {
+        type: 'react-keyword',
+        regex: '\\b(useState|useEffect|useContext|useReducer|useCallback|useMemo|useRef|useImperativeHandle|useLayoutEffect|useDebugValue|Component|PureComponent|createContext|Fragment|StrictMode|Suspense|lazy|memo|forwardRef|createRef)\\b',
+        priority: 11
+      },
+      // NestJS specific keywords
+      {
+        type: 'nestjs-keyword',
+        regex: '\\b(Controller|Injectable|Module|Service|Guard|Interceptor|Filter|Pipe|Middleware|CanActivate|NestInterceptor|ExceptionFilter|PipeTransform|NestMiddleware)\\b',
+        priority: 11
+      },
+      // NextJS specific keywords
+      {
+        type: 'nextjs-keyword',
+        regex: '\\b(getServerSideProps|getStaticProps|getStaticPaths|getInitialProps|NextPage|NextApiRequest|NextApiResponse|NextRouter|useRouter|Head|Image|Link|Script)\\b',
+        priority: 11
+      },
+      // Regular JavaScript keywords (lower priority than TS)
+      {
+        type: 'js-keyword',
+        regex: '\\b(function|return|const|let|var|if|else|for|while|class|import|export|try|catch|finally|switch|case|default|break|continue|do|throw|new|this|super|in|of|with|debugger|delete|instanceof|void)\\b',
+        priority: 10
+      },
+      // TypeScript types
+      {
+        type: 'ts-type',
+        regex: '\\b(string|number|boolean|object|undefined|null|any|unknown|never|void|Array|Promise|Record|Partial|Required|Readonly|Pick|Omit|Exclude|Extract|NonNullable|Parameters|ReturnType|InstanceType|ThisType)\\b',
+        priority: 9
+      },
+      // Generic type parameters
+      {
+        type: 'generic',
+        regex: '<[A-Z][a-zA-Z0-9,\\s]*>',
+        priority: 9
+      },
+      // Template literals
+      {
+        type: 'template-literal',
+        regex: '`([^`\\\\]|\\\\.)*`',
+        priority: 8
+      },
+      // Regular strings
+      {
+        type: 'string',
+        regex: '"([^"\\\\]|\\\\.)*"|\'([^\'\\\\]|\\\\.)*\'',
+        priority: 8
+      },
+      // Numbers
+      {
+        type: 'number',
+        regex: '\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?[nN]?\\b',
+        priority: 7
+      },
+      // Booleans and special values
+      {
+        type: 'boolean',
+        regex: '\\b(true|false|null|undefined)\\b',
+        priority: 7
+      },
+      // Comments
+      {
+        type: 'comment',
+        regex: '//.*$|/\\*[\\s\\S]*?\\*/|<!--[\\s\\S]*?-->',
+        priority: 6
+      },
+      // Methods and function calls
+      {
+        type: 'method',
+        regex: '\\.([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\\s*\\()',
+        priority: 5
+      },
+      // Properties
+      {
+        type: 'property',
+        regex: '\\.([a-zA-Z_$][a-zA-Z0-9_$]*)(?!\\s*\\()',
+        priority: 5
+      },
+      // Arrow functions
+      {
+        type: 'arrow',
+        regex: '=>',
+        priority: 4
+      },
+      // Type annotations
+      {
+        type: 'type-annotation',
+        regex: ':\\s*[a-zA-Z_$][a-zA-Z0-9_$<>\\[\\]|&,\\s]*',
+        priority: 4
+      },
+      // Operators
+      {
+        type: 'operator',
+        regex: '[+\\-*/%=<>!&|^~?:(){}\\[\\];,.]|\\?\\?|\\|\\||&&|\\+\\+|--|\\*\\*|===|!==|==|!=|<=|>=|<<|>>|>>>|\\+=|-=|\\*=|/=|%=|&=|\\|=|\\^=|<<=|>>=|>>>=',
+        priority: 3
+      }
+    ];
+  }
+
+  getTokenClassName(type) {
+    const classMap = {
+      // Decorators (NestJS style)
+      'decorator': 'ts-decorator',
+      
+      // JSX/TSX
+      'jsx-tag': 'jsx-tag',
+      'jsx-attribute': 'jsx-attribute',
+      
+      // TypeScript specific
+      'ts-keyword': 'ts-keyword',
+      'ts-type': 'ts-type',
+      'generic': 'ts-generic',
+      'type-annotation': 'ts-type-annotation',
+      
+      // Framework specific
+      'react-keyword': 'react-keyword',
+      'nestjs-keyword': 'nestjs-keyword',
+      'nextjs-keyword': 'nextjs-keyword',
+      
+      // Regular JavaScript
+      'js-keyword': 'js-keyword',
+      'template-literal': 'ts-template-literal',
+      'string': 'js-string',
+      'number': 'js-number',
+      'boolean': 'js-boolean',
+      'comment': 'js-comment',
+      'method': 'js-method',
+      'property': 'js-property',
+      'arrow': 'ts-arrow',
+      'operator': 'js-operator'
+    };
+    return classMap[type];
+  }
+}
+
 // Python highlighter
 class PythonHighlighter extends BaseHighlighter {
   getPatterns() {
@@ -810,6 +973,7 @@ class NeovimHandler {
   initializeHighlighters() {
     this.highlighters = {
       'javascript': new JavaScriptHighlighter(),
+      'typescript': new TypeScriptHighlighter(),
       'python': new PythonHighlighter(),
       'css': new CSSHighlighter(),
       'html': new HTMLHighlighter(),
