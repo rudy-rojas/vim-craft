@@ -1,4 +1,3 @@
-
 // Token-based syntax highlighting system
 class Token {
   constructor(type, value, start, end) {
@@ -151,46 +150,67 @@ class BaseHighlighter {
 class JavaScriptHighlighter extends BaseHighlighter {
   getPatterns() {
     return [
+      // JavaScript decorators (proposals) - Split into @ symbol and name
+      {
+        type: 'decorator-at',
+        regex: '@(?=[a-zA-Z_$])',
+        priority: 12
+      },
+      {
+        type: 'decorator-name', 
+        regex: '(?<=@)[a-zA-Z_$][a-zA-Z0-9_$]*',
+        priority: 11
+      },
+      {
+        type: 'decorator-params',
+        regex: '(?<=@[a-zA-Z_$][a-zA-Z0-9_$]*)\\([^)]*\\)',
+        priority: 10
+      },
       {
         type: 'keyword',
         regex: '\\b(function|return|const|let|var|if|else|for|while|class|import|export|async|await|try|catch|finally)\\b',
-        priority: 10
+        priority: 9
       },
       {
         type: 'string',
         regex: '"([^"\\\\]|\\\\.)*"|\'([^\'\\\\]|\\\\.)*\'|`([^`\\\\]|\\\\.)*`',
-        priority: 9
+        priority: 8
       },
       {
         type: 'number',
         regex: '\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?\\b',
-        priority: 8
+        priority: 7
       },
       {
         type: 'boolean',
         regex: '\\b(true|false)\\b',
-        priority: 8
+        priority: 7
       },
       {
         type: 'comment',
         regex: '//.*$|/\\*[\\s\\S]*?\\*/',
-        priority: 7
+        priority: 6
       },
       {
         type: 'method',
         regex: '\\.([a-zA-Z_$][a-zA-Z0-9_$]*)',
-        priority: 6
+        priority: 5
       },
       {
         type: 'operator',
         regex: '[+\\-*/%=<>!&|(){}\\[\\];,.]',
-        priority: 5
+        priority: 4
       }
     ];
   }
 
   getTokenClassName(type) {
     const classMap = {
+      // Decorators
+      'decorator-at': 'ts-decorator-at',
+      'decorator-name': 'ts-decorator-name',
+      'decorator-params': 'ts-decorator-params',
+      
       'keyword': 'js-keyword',
       'string': 'js-string',
       'number': 'js-number',
@@ -207,133 +227,145 @@ class JavaScriptHighlighter extends BaseHighlighter {
 class TypeScriptHighlighter extends BaseHighlighter {
   getPatterns() {
     return [
-      // TypeScript/JavaScript decorators (NestJS)
+      // TypeScript/JavaScript decorators - Split into @ symbol and name
       {
-        type: 'decorator',
-        regex: '@[a-zA-Z_$][a-zA-Z0-9_$]*(?:\\([^)]*\\))?',
+        type: 'decorator-at',
+        regex: '@(?=[a-zA-Z_$])',
+        priority: 16
+      },
+      {
+        type: 'decorator-name',
+        regex: '(?<=@)[a-zA-Z_$][a-zA-Z0-9_$]*',
         priority: 15
+      },
+      {
+        type: 'decorator-params',
+        regex: '(?<=@[a-zA-Z_$][a-zA-Z0-9_$]*)\\([^)]*\\)',
+        priority: 14
       },
       // JSX/TSX tags and components
       {
         type: 'jsx-tag',
         regex: '</?[A-Z][a-zA-Z0-9]*(?:\\.[a-zA-Z0-9]+)*|</?[a-z][a-zA-Z0-9-]*',
-        priority: 14
+        priority: 13
       },
       // JSX attributes
       {
         type: 'jsx-attribute',
         regex: '\\b[a-zA-Z-]+(?==)|\\{[^}]*\\}',
-        priority: 13
+        priority: 12
       },
       // TypeScript keywords
       {
         type: 'ts-keyword',
         regex: '\\b(interface|type|enum|namespace|declare|abstract|readonly|keyof|typeof|extends|implements|public|private|protected|static|async|await)\\b',
-        priority: 12
+        priority: 11
       },
       // React specific keywords and hooks
       {
         type: 'react-keyword',
         regex: '\\b(useState|useEffect|useContext|useReducer|useCallback|useMemo|useRef|useImperativeHandle|useLayoutEffect|useDebugValue|Component|PureComponent|createContext|Fragment|StrictMode|Suspense|lazy|memo|forwardRef|createRef)\\b',
-        priority: 11
+        priority: 10
       },
       // NestJS specific keywords
       {
         type: 'nestjs-keyword',
         regex: '\\b(Controller|Injectable|Module|Service|Guard|Interceptor|Filter|Pipe|Middleware|CanActivate|NestInterceptor|ExceptionFilter|PipeTransform|NestMiddleware)\\b',
-        priority: 11
+        priority: 10
       },
       // NextJS specific keywords
       {
         type: 'nextjs-keyword',
         regex: '\\b(getServerSideProps|getStaticProps|getStaticPaths|getInitialProps|NextPage|NextApiRequest|NextApiResponse|NextRouter|useRouter|Head|Image|Link|Script)\\b',
-        priority: 11
+        priority: 10
       },
       // Regular JavaScript keywords (lower priority than TS)
       {
         type: 'js-keyword',
         regex: '\\b(function|return|const|let|var|if|else|for|while|class|import|export|try|catch|finally|switch|case|default|break|continue|do|throw|new|this|super|in|of|with|debugger|delete|instanceof|void)\\b',
-        priority: 10
+        priority: 9
       },
       // TypeScript types
       {
         type: 'ts-type',
         regex: '\\b(string|number|boolean|object|undefined|null|any|unknown|never|void|Array|Promise|Record|Partial|Required|Readonly|Pick|Omit|Exclude|Extract|NonNullable|Parameters|ReturnType|InstanceType|ThisType)\\b',
-        priority: 9
+        priority: 8
       },
       // Generic type parameters
       {
         type: 'generic',
         regex: '<[A-Z][a-zA-Z0-9,\\s]*>',
-        priority: 9
+        priority: 8
       },
       // Template literals
       {
         type: 'template-literal',
         regex: '`([^`\\\\]|\\\\.)*`',
-        priority: 8
+        priority: 7
       },
       // Regular strings
       {
         type: 'string',
         regex: '"([^"\\\\]|\\\\.)*"|\'([^\'\\\\]|\\\\.)*\'',
-        priority: 8
+        priority: 7
       },
       // Numbers
       {
         type: 'number',
         regex: '\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?[nN]?\\b',
-        priority: 7
+        priority: 6
       },
       // Booleans and special values
       {
         type: 'boolean',
         regex: '\\b(true|false|null|undefined)\\b',
-        priority: 7
+        priority: 6
       },
       // Comments
       {
         type: 'comment',
         regex: '//.*$|/\\*[\\s\\S]*?\\*/|<!--[\\s\\S]*?-->',
-        priority: 6
+        priority: 5
       },
       // Methods and function calls
       {
         type: 'method',
         regex: '\\.([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\\s*\\()',
-        priority: 5
+        priority: 4
       },
       // Properties
       {
         type: 'property',
         regex: '\\.([a-zA-Z_$][a-zA-Z0-9_$]*)(?!\\s*\\()',
-        priority: 5
+        priority: 4
       },
       // Arrow functions
       {
         type: 'arrow',
         regex: '=>',
-        priority: 4
+        priority: 3
       },
       // Type annotations
       {
         type: 'type-annotation',
         regex: ':\\s*[a-zA-Z_$][a-zA-Z0-9_$<>\\[\\]|&,\\s]*',
-        priority: 4
+        priority: 3
       },
       // Operators
       {
         type: 'operator',
         regex: '[+\\-*/%=<>!&|^~?:(){}\\[\\];,.]|\\?\\?|\\|\\||&&|\\+\\+|--|\\*\\*|===|!==|==|!=|<=|>=|<<|>>|>>>|\\+=|-=|\\*=|/=|%=|&=|\\|=|\\^=|<<=|>>=|>>>=',
-        priority: 3
+        priority: 2
       }
     ];
   }
 
   getTokenClassName(type) {
     const classMap = {
-      // Decorators (NestJS style)
-      'decorator': 'ts-decorator',
+      // Decorators (separados)
+      'decorator-at': 'ts-decorator-at',
+      'decorator-name': 'ts-decorator-name', 
+      'decorator-params': 'ts-decorator-params',
       
       // JSX/TSX
       'jsx-tag': 'jsx-tag',
@@ -964,6 +996,7 @@ class NeovimHandler {
     this.sourceCodeTextarea = document.getElementById('source-code');
     this.convertBtn = document.getElementById('convert-btn');
     this.copyBtn = document.getElementById('copy-btn');
+    this.copyPreviewBtn = document.getElementById('copy-preview-btn');
     this.previewOutput = document.getElementById('preview-output');
     this.sourceOutput = document.getElementById('source-output');
     this.statusBar = document.getElementById('status-bar');
@@ -991,6 +1024,7 @@ class NeovimHandler {
   initEventListeners() {
     this.convertBtn.addEventListener('click', () => this.handleConvert());
     this.copyBtn.addEventListener('click', () => this.copyToClipboard());
+    this.copyPreviewBtn.addEventListener('click', () => this.copyPreviewToClipboard());
     
     this.sourceCodeTextarea.addEventListener('select', () => this.updateUI());
     this.sourceCodeTextarea.addEventListener('mouseup', () => this.updateUI());
@@ -1108,11 +1142,16 @@ class NeovimHandler {
   }
 
   displayResults(processedCode) {
+    // Clear any placeholder content first
+    this.previewOutput.innerHTML = '';
+    
     // Display in preview (with styling) - preserve all whitespace and line breaks
-    this.previewOutput.style.whiteSpace = 'pre';
+    this.previewOutput.style.whiteSpace = 'pre-wrap';
     this.previewOutput.style.fontFamily = 'inherit';
     this.previewOutput.style.margin = '0';
-    this.previewOutput.style.padding = '0';
+    this.previewOutput.style.padding = '16px';
+    this.previewOutput.style.lineHeight = '1.5';
+    this.previewOutput.style.color = '#ebdbb2';
     this.previewOutput.innerHTML = processedCode;
 
     // Display in source (raw HTML)
@@ -1134,6 +1173,24 @@ class NeovimHandler {
         });
     } else {
       this.fallbackCopy(sourceCode);
+    }
+  }
+
+  copyPreviewToClipboard() {
+    const previewContent = this.previewOutput.innerHTML;
+
+    if (navigator.clipboard) {
+      navigator.clipboard
+        .writeText(previewContent)
+        .then(() => {
+          this.showCopyPreviewFeedback();
+        })
+        .catch((err) => {
+          console.error('Failed to copy: ', err);
+          this.fallbackCopy(previewContent);
+        });
+    } else {
+      this.fallbackCopy(previewContent);
     }
   }
 
@@ -1164,10 +1221,20 @@ class NeovimHandler {
       this.copyBtn.style.background = '';
     }, 2000);
   }
+
+  showCopyPreviewFeedback() {
+    const originalText = this.copyPreviewBtn.textContent;
+    this.copyPreviewBtn.textContent = 'Copied!';
+    this.copyPreviewBtn.style.background = 'var(--green)';
+
+    setTimeout(() => {
+      this.copyPreviewBtn.textContent = originalText;
+      this.copyPreviewBtn.style.background = '';
+    }, 2000);
+  }
 }
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   new NeovimHandler();
 });
-    

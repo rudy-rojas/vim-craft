@@ -1,4 +1,3 @@
-
 /* Gruvbox Dark Hard Color Palette */
 :root {
   --bg0-hard: #1d2021;
@@ -30,6 +29,9 @@
   --purple-dim: #b16286;
   --aqua-dim: #689d6a;
   --orange-dim: #d65d0e;
+
+  --bright-blue: #83a598;
+  --bright-yellow: #fabd2f;
 }
 
 body {
@@ -479,7 +481,7 @@ textarea.form-control {
 }
 
 
-    /* TypeScript/JSX specific styles - Add these to your existing CSS */
+/* TypeScript/JSX specific styles - Add these to your existing CSS */
 
 /* TypeScript Keywords */
 .ts-keyword {
@@ -497,6 +499,21 @@ textarea.form-control {
 .ts-decorator {
   color: var(--orange);
   font-weight: bold;
+}
+
+/* TypeScript Decorators - Separated styling */
+.ts-decorator-at {
+  color: var(--bright-blue);
+  font-weight: bold;
+}
+
+.ts-decorator-name {
+  color: var(--bright-yellow);
+  font-weight: bold;
+}
+
+.ts-decorator-params {
+  color: var(--fg4);
 }
 
 /* Generic Types */
