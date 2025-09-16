@@ -220,134 +220,7 @@ textarea.form-control {
   font-weight: bold;
 }
 
-/* Syntax highlighting classes */
-/* HTML/XML */
-.tag-bracket {
-  color: var(--gray);
-}
-.tag-name {
-  color: var(--red);
-}
-.attribute-name {
-  color: var(--yellow);
-}
-.attribute-value {
-  color: var(--green);
-}
-.equals {
-  color: var(--fg1);
-}
-
-/* JavaScript/TypeScript */
-.js-keyword {
-  color: var(--red);
-}
-.js-function {
-  color: var(--yellow);
-}
-.js-string {
-  color: var(--green);
-}
-.js-number {
-  color: var(--purple);
-}
-.js-boolean {
-  color: var(--orange);
-}
-.js-operator {
-  color: var(--aqua);
-}
-.js-variable {
-  color: var(--blue);
-}
-.js-comment {
-  color: var(--gray);
-  font-style: italic;
-}
-.js-method {
-  color: var(--yellow);
-}
-.js-property {
-  color: var(--blue);
-}
-
-/* Java */
-.java-keyword {
-  color: var(--red);
-}
-.java-type {
-  color: var(--yellow);
-}
-.java-string {
-  color: var(--green);
-}
-.java-annotation {
-  color: var(--orange);
-}
-.java-modifier {
-  color: var(--purple);
-}
-.java-method {
-  color: var(--yellow);
-}
-
-/* Swift */
-.swift-keyword {
-  color: var(--red);
-}
-.swift-type {
-  color: var(--yellow);
-}
-.swift-string {
-  color: var(--green);
-}
-.swift-attribute {
-  color: var(--orange);
-}
-.swift-number {
-  color: var(--purple);
-}
-
-/* Python */
-.py-keyword {
-  color: var(--red);
-}
-.py-function {
-  color: var(--yellow);
-}
-.py-string {
-  color: var(--green);
-}
-.py-decorator {
-  color: var(--orange);
-}
-.py-builtin {
-  color: var(--blue);
-}
-.py-number {
-  color: var(--purple);
-}
-.py-comment {
-  color: var(--gray);
-  font-style: italic;
-}
-
-/* CSS */
-.css-selector {
-  color: var(--red);
-}
-.css-property {
-  color: var(--blue);
-}
-.css-value {
-  color: var(--green);
-}
-.css-unit {
-  color: var(--purple);
-}
-.css-pseudo {
-  color: var(--orange);
-}
+/* Old syntax highlighting classes removed - now using Prism.js */
 
 /* Cursor styles */
 .cursor {
@@ -390,16 +263,15 @@ textarea.form-control {
   position: relative;
   padding-top: 2px;
   padding-bottom: 3px;
-   
 }
 
-/* Visual block cursor - NEW: Cursor de bloque animado para modo Visual */
+/* Visual block cursor - cursor de bloque animado para modo Visual */
 .visual-block-cursor {
-  color: var(--bg0-hard) !important; /* Color del texto contrastante */
+  color: var(--bg0-hard) !important; 
   display: inline-block;
   position: relative;
-  background: transparent; /* Sin fondo directo */
-  z-index: 10; /* El carácter al frente de todo */
+  background: transparent; 
+  z-index: 10; 
 }
 
 .visual-block-cursor::before {
@@ -408,41 +280,28 @@ textarea.form-control {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 100%; /* Ancho inicial completo */
-  background-color: #fbf1c7; /* Color más suave y claro */
-  animation: cursor-width 1s infinite steps(1, end); /* Cambio abrupto de ancho */
-  transform-origin: left center; /* Mantiene el lado izquierdo fijo */
-  z-index: -1; /* Cursor detrás del texto */
+  width: 100%; 
+  background-color: #fbf1c7; 
+  animation: cursor-width 1s infinite steps(1, end); 
+  transform-origin: left center; 
+  z-index: -1; 
 }
 
 @keyframes cursor-width {
   0% {
-    transform: scaleX(1); /* 100% ancho */
+    transform: scaleX(1); 
   }
   50% {
-    transform: scaleX(0.85); /* 85% ancho - cambio más sutil */
+    transform: scaleX(0.85); 
   }
   100% {
-    transform: scaleX(1); /* 100% ancho */
+    transform: scaleX(1); 
   }
 }
 
-/* Code lines */
-.code-line {
-  display: block;
-  white-space: pre;
-}
+/* Removed unused code-line class */
 
-.info-text {
-  margin-top: 30px;
-  text-align: center;
-  color: var(--gray);
-  font-size: 12px;
-}
-
-.info-text strong {
-  color: var(--yellow);
-}
+/* Removed unused info-text styling */
 
 .status-bar-ide {
   font-size: 10px;
@@ -468,145 +327,12 @@ textarea.form-control {
   }
 }
 
-.block-cursor {
-  background-color: #fabd2f;
-  display: inline-block;
-  animation: pulse-cursor 1s infinite;
-  color: black;
-}
-
-.visual-highlight {
-  background-color: #665c54;
-  color: #fbf1c7;
-}
+/* Unused visual highlighting classes removed */
 
 
-/* TypeScript/JSX specific styles - Add these to your existing CSS */
+/* Old TypeScript/React specific styles removed - now using Prism.js */
 
-/* TypeScript Keywords */
-.ts-keyword {
-  color: var(--purple);
-  font-weight: bold;
-}
-
-/* TypeScript Types */
-.ts-type {
-  color: var(--blue);
-  font-weight: bold;
-}
-
-/* TypeScript Decorators */
-.ts-decorator {
-  color: var(--orange);
-  font-weight: bold;
-}
-
-/* TypeScript Decorators - Separated styling */
-.ts-decorator-at {
-  color: var(--bright-blue);
-  font-weight: bold;
-}
-
-.ts-decorator-name {
-  color: var(--bright-yellow);
-  font-weight: bold;
-}
-
-.ts-decorator-params {
-  color: var(--fg4);
-}
-
-/* Generic Types */
-.ts-generic {
-  color: var(--aqua);
-}
-
-/* Type Annotations */
-.ts-type-annotation {
-  color: var(--blue);
-}
-
-/* Template Literals */
-.ts-template-literal {
-  color: var(--green);
-  background: rgba(184, 187, 38, 0.1);
-}
-
-/* Arrow Functions */
-.ts-arrow {
-  color: var(--red);
-  font-weight: bold;
-}
-
-/* JSX/TSX Tags */
-.jsx-tag {
-  color: var(--red);
-  font-weight: bold;
-}
-
-/* JSX Attributes */
-.jsx-attribute {
-  color: var(--yellow);
-}
-
-/* React Specific Keywords */
-.react-keyword {
-  color: var(--aqua);
-  font-weight: bold;
-}
-
-/* NestJS Specific Keywords */
-.nestjs-keyword {
-  color: var(--purple);
-  font-weight: bold;
-  text-decoration: underline;
-  text-decoration-color: var(--purple-dim);
-}
-
-/* NextJS Specific Keywords */
-.nextjs-keyword {
-  color: var(--orange);
-  font-weight: bold;
-  text-decoration: underline;
-  text-decoration-color: var(--orange-dim);
-}
-
-/* ╔════════════════════════════════════════════════════════════════════╗
-   ║   TypeScript + NestJS + NextJS  –  Gruvbox Dark Hard estilos     ║
-   ╚════════════════════════════════════════════════════════════════════╝ */
-
-/* ---- Tokens de TypeScript ---- */
-.ts-keyword          { color: var(--red);        font-weight: bold; }
-.ts-generic          { color: var(--aqua);       font-style: italic; }
-.ts-type-annotation  { color: var(--blue); }
-.ts-interface        { color: var(--yellow);    font-weight: bold; }
-
-/* ---- Decoradores ---- */
-.ts-decorator,
-.ts-decorator span,
-.nestjs-decorator    { color: var(--orange);    font-weight: 500; }
-
-/* ---- NextJS específico ---- */
-.nextjs-keyword      { color: var(--purple);    font-weight: bold; }
-.nextjs-app-router   { color: var(--green);     font-style: italic; }
-
-/* ---- React Hooks ---- */
-.react-hooks         { color: var(--aqua);      font-weight: bold; }
-
-/* ---- Cursor / selección en modo Visual para tokens TS ---- */
-.visual-selection.ts-keyword,
-.visual-selection.ts-interface,
-.visual-selection.nextjs-keyword {
-  background: rgba(251, 189, 47, 0.25);  /* yellow con 25 % opacidad */
-}
-
-/* ---- Cursor de bloque en último carácter seleccionado ---- */
-.visual-block-cursor.ts-keyword,
-.visual-block-cursor.ts-interface,
-.visual-block-cursor.nestjs-decorator {
-  background-color: var(--fg0);  /* fondo claro */
-  color: var(--bg0-hard);        /* texto oscuro */
-}
+/* Old framework-specific styles removed - not needed with current Prism.js setup */
 
 /* ========================================
    PRISM.JS SYNTAX HIGHLIGHTING STYLES  
