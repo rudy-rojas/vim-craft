@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Module Test</title>
+</head>
+<body>
+    <h1>Module Loading Test</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        async function testModules() {
+            const output = document.getElementById('output');
+            
+            try {
+                output.innerHTML += '<p>Testing prism-loader...</p>';
+                const { PrismLoader } = await import('./js/prism-loader.js');
+                output.innerHTML += '<p>✅ PrismLoader imported successfully</p>';
+                
+                output.innerHTML += '<p>Testing prism-vim-integration...</p>';
+                const { PrismVimHighlighterFactory } = await import('./js/prism-vim-integration.js');
+                output.innerHTML += '<p>✅ PrismVimHighlighterFactory imported successfully</p>';
+                
+                output.innerHTML += '<p>Testing neovim-simulator...</p>';
+                const { NeovimSimulator } = await import('./js/neovim-simulator.js');
+                output.innerHTML += '<p>✅ NeovimSimulator imported successfully</p>';
+                
+                output.innerHTML += '<p>Creating PrismLoader instance...</p>';
+                const loader = new PrismLoader();
+                output.innerHTML += '<p>✅ PrismLoader instance created</p>';
+                
+                output.innerHTML += '<p>Creating highlighter...</p>';
+                const highlighter = await loader.createHighlighter('javascript');
+                output.innerHTML += '<p>✅ Highlighter created: ' + typeof highlighter + '</p>';
+                
+                output.innerHTML += '<p>Creating NeovimSimulator...</p>';
+                const simulator = new NeovimSimulator(highlighter);
+                output.innerHTML += '<p>✅ NeovimSimulator created successfully</p>';
+                
+                output.innerHTML += '<p><strong>All modules loaded successfully!</strong></p>';
+            } catch (error) {
+                output.innerHTML += '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+                output.innerHTML += '<p style="color: red;">Stack: ' + error.stack + '</p>';
+            }
+        }
+        
+        testModules();
+    </script>
+</body>
+</html>

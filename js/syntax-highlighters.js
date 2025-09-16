@@ -731,18 +731,9 @@ class HighlighterFactory {
   }
 }
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    Token,
-    BaseHighlighter,
-    JavaScriptHighlighter,
-    TypeScriptHighlighter,
-    PythonHighlighter,
-    CSSHighlighter,
-    HTMLHighlighter,
-    JavaHighlighter,
-    SwiftHighlighter,
-    HighlighterFactory
-  };
-}
+// Export for ES module usage
+export {
+    BaseHighlighter, CSSHighlighter, HighlighterFactory, HTMLHighlighter,
+    JavaHighlighter, JavaScriptHighlighter, PythonHighlighter, SwiftHighlighter, Token, TypeScriptHighlighter
+};
+

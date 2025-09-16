@@ -5,8 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vim Craft- Interactive Mode Converter</title>
     <link rel="stylesheet" href="./css/gruvbox-styles.css" />
+    <style>
+      #debug-log {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        width: 400px;
+        height: 300px;
+        background: #1d2021;
+        color: #ebdbb2;
+        border: 1px solid #458588;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 12px;
+        overflow-y: auto;
+        z-index: 1000;
+      }
+      #debug-log h3 {
+        margin: 0 0 10px 0;
+        color: #fabd2f;
+      }
+      .log-entry {
+        margin-bottom: 5px;
+        padding: 2px;
+        border-left: 3px solid #458588;
+        padding-left: 5px;
+      }
+      .log-error {
+        border-left-color: #fb4934;
+        background: rgba(251, 73, 52, 0.1);
+      }
+      .log-warn {
+        border-left-color: #fabd2f;
+        background: rgba(250, 189, 47, 0.1);
+      }
+      .log-info {
+        border-left-color: #83a598;
+        background: rgba(131, 165, 152, 0.1);
+      }
+    </style>
   </head>
   <body>
+    <!-- Debug Log Panel -->
+    <div id="debug-log">
+      <h3>Debug Log</h3>
+      <div id="log-content"></div>
+    </div>
+
     <div class="container">
       <h1>🎨 VimCraft - Interactive Mode Converter - (anki)</h1>
 
@@ -81,7 +126,64 @@ console.log(message);</textarea>
       </div>
     </div>
 
-    <div></div>
+    <!-- Debug Logger Script -->
+    <script>
+      // Create debug logger
+      const debugLog = document.getElementById('log-content');
+      
+      function addLog(message, type = 'info') {
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        debugLog.appendChild(entry);
+        debugLog.scrollTop = debugLog.scrollHeight;
+        
+        // Keep only last 50 entries
+        while (debugLog.children.length > 50) {
+          debugLog.removeChild(debugLog.firstChild);
+        }
+      }
+      
+      // Override console methods
+      const originalConsole = {
+        log: console.log,
+        error: console.error,
+        warn: console.warn,
+        info: console.info
+      };
+      
+      console.log = function(...args) {
+        originalConsole.log.apply(console, args);
+        addLog(args.join(' '), 'info');
+      };
+      
+      console.error = function(...args) {
+        originalConsole.error.apply(console, args);
+        addLog(args.join(' '), 'error');
+      };
+      
+      console.warn = function(...args) {
+        originalConsole.warn.apply(console, args);
+        addLog(args.join(' '), 'warn');
+      };
+      
+      console.info = function(...args) {
+        originalConsole.info.apply(console, args);
+        addLog(args.join(' '), 'info');
+      };
+      
+      // Catch unhandled errors
+      window.addEventListener('error', function(e) {
+        addLog(`ERROR: ${e.message} at ${e.filename}:${e.lineno}`, 'error');
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        addLog(`UNHANDLED PROMISE REJECTION: ${e.reason}`, 'error');
+      });
+      
+      addLog('Debug logger initialized', 'info');
+    </script>
+
     <!-- Load the main application as an ES module -->
     <script type="module" src="./js/neovim-handler.js"></script>
   </body>

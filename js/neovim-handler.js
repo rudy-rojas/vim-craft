@@ -5,10 +5,14 @@
 // Main application class
 class NeovimHandler {
   constructor() {
+    console.log('NeovimHandler initializing...');
+    this.currentLanguage = null;
+    this.neovimSimulator = null;
     this.initializeElements();
     this.initializeProcessors();
     this.initEventListeners();
     this.updateUI();
+    console.log('NeovimHandler initialized successfully');
   }
 
   initializeElements() {
@@ -25,8 +29,8 @@ class NeovimHandler {
   }
 
   initializeProcessors() {
-    // Initialize Neovim mode simulator
-    this.neovimSimulator = new NeovimModeSimulator();
+    // Neovim simulator will be initialized in handleConvert based on language
+    this.neovimSimulator = null;
   }
 
   initEventListeners() {
@@ -69,10 +73,14 @@ class NeovimHandler {
     this.statusBar.textContent = `-- ${mode} --`;
   }
 
-  handleConvert() {
+  async handleConvert() {
+    console.log('=== handleConvert started ===');
+    
     const sourceCode = this.sourceCodeTextarea.value;
     const language = this.languageSelect.value;
     const mode = this.modeSelect.value;
+
+    console.log('Input values:', { sourceCode: sourceCode.length + ' chars', language, mode });
 
     if (!sourceCode.trim()) {
       alert('Please enter some source code');
@@ -82,24 +90,69 @@ class NeovimHandler {
     const start = this.sourceCodeTextarea.selectionStart;
     const end = this.sourceCodeTextarea.selectionEnd;
 
-    // Validate mode input
-    const validation = this.neovimSimulator.validateModeInput(mode, start, end);
-    if (!validation.valid) {
-      alert(validation.errors.join('\n'));
-      return;
-    }
+    console.log('Selection:', { start, end });
 
     try {
-      // Get the appropriate highlighter
-      const highlighter = HighlighterFactory.create(language);
-      
+      // Initialize simulator if not already done or if language changed
+      if (!this.neovimSimulator || this.currentLanguage !== language) {
+        console.log('Need to initialize simulator');
+        await this.initializeSimulator(language);
+        this.currentLanguage = language;
+        console.log('Simulator initialized successfully');
+      } else {
+        console.log('Using existing simulator');
+      }
+
+      // Validate mode input
+      console.log('Validating mode input...');
+      const validation = this.neovimSimulator.validateModeInput(mode, start, end);
+      if (!validation.valid) {
+        console.log('Validation failed:', validation.errors);
+        alert(validation.errors.join('\n'));
+        return;
+      }
+      console.log('Validation passed');
+
       // Process the code using the Neovim simulator
-      const result = this.neovimSimulator.processCode(sourceCode, highlighter, mode, start, end);
+      console.log('Processing code...');
+      const result = this.neovimSimulator.processCode(sourceCode, mode, start, end);
+      console.log('Code processed, result length:', result.length);
       
       this.displayResults(result);
+      console.log('=== handleConvert completed successfully ===');
     } catch (error) {
+      console.error('=== Error in handleConvert ===');
       console.error('Error processing code:', error);
+      console.error('Stack trace:', error.stack);
       alert('Error processing code. Please check your input.');
+    }
+  }
+
+  async initializeSimulator(language) {
+    console.log('Initializing simulator for language:', language);
+    
+    try {
+      // Load Prism and create Prism-powered highlighter
+      console.log('Loading Prism.js for enhanced highlighting...');
+      
+      // Import the Prism loader
+      const { PrismLoader } = await import('./prism-loader.js');
+      console.log('PrismLoader imported successfully');
+      
+      // Initialize Prism for the selected language
+      const prismLoader = new PrismLoader();
+      console.log('Creating Prism highlighter for:', language);
+      const highlighter = await prismLoader.createHighlighter(language);
+      console.log('Prism highlighter created:', highlighter);
+      
+      // Import NeovimSimulator
+      const { NeovimSimulator } = await import('./neovim-simulator.js');
+      console.log('NeovimSimulator imported successfully');
+      this.neovimSimulator = new NeovimSimulator(highlighter);
+      console.log('NeovimSimulator initialized with Prism highlighter');
+    } catch (error) {
+      console.error('Failed to initialize Prism highlighter:', error);
+      throw error; // Re-throw the error to be handled by the caller
     }
   }
 
@@ -198,5 +251,10 @@ class NeovimHandler {
 
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  new NeovimHandler();
+  console.log('DOM loaded, initializing NeovimHandler...');
+  try {
+    new NeovimHandler();
+  } catch (error) {
+    console.error('Failed to initialize NeovimHandler:', error);
+  }
 });
