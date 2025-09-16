@@ -26,6 +26,7 @@ class PrismLoader {
     this.loading = true;
     this.loadPromise = this._loadPrismCore()
       .then(() => this._loadLanguageComponents())
+      .then(() => this._loadPrismPlugins())
       .then(() => this._loadPrismCSS())
       .then(() => {
         this.loaded = true;
@@ -110,6 +111,44 @@ class PrismLoader {
       };
       script.onerror = () => {
         console.warn(`Failed to load prism-${language}.js`);
+        resolve(); // Don't reject, just warn
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  /**
+   * Load Prism plugins from local files
+   */
+  async _loadPrismPlugins() {
+    const plugins = [
+      'match-braces'
+    ];
+
+    const promises = plugins.map(plugin => this._loadPrismPlugin(plugin));
+    
+    try {
+      await Promise.all(promises);
+      console.log('Prism plugins loaded:', plugins);
+    } catch (error) {
+      console.warn('Some Prism plugins failed to load:', error);
+      // Continue anyway - core functionality should work
+    }
+  }
+
+  /**
+   * Load a single Prism plugin from local files
+   */
+  _loadPrismPlugin(plugin) {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = `./vendor/prism/plugins/prism-${plugin}.js`;  // Local file
+      script.onload = () => {
+        console.log(`Prism ${plugin} plugin loaded`);
+        resolve();
+      };
+      script.onerror = () => {
+        console.warn(`Failed to load prism-${plugin}.js plugin`);
         resolve(); // Don't reject, just warn
       };
       document.head.appendChild(script);

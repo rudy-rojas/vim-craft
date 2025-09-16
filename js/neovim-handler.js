@@ -169,6 +169,15 @@ class NeovimHandler {
     // Clear any placeholder content first
     this.previewOutput.innerHTML = '';
     
+    // Get the parent pre element for Prism plugin configuration
+    const preElement = this.previewOutput.parentElement;
+    if (preElement && preElement.tagName === 'PRE') {
+      preElement.classList.add('rainbow-braces');
+      preElement.setAttribute('data-prism-match-braces', '');
+      preElement.setAttribute('data-prism-brace-hover', '');
+      preElement.setAttribute('data-prism-brace-select', '');
+    }
+    
     // Display in preview (with styling) - preserve all whitespace and line breaks
     this.previewOutput.style.whiteSpace = 'pre-wrap';
     this.previewOutput.style.fontFamily = 'inherit';
@@ -178,8 +187,139 @@ class NeovimHandler {
     this.previewOutput.style.color = '#ebdbb2';
     this.previewOutput.innerHTML = processedCode;
 
+    // Try alternative approach: use Prism directly for match-braces
+    this.initializePrismMatchBraces();
+
     // Display in source (raw HTML)
     this.sourceOutput.querySelector('code').textContent = processedCode;
+  }
+
+  initializePrismMatchBraces() {
+    const preElement = this.previewOutput.parentElement;
+    
+    if (!window.Prism || !preElement) {
+      console.warn('Prism or preElement not available for match-braces');
+      return;
+    }
+
+    console.log('Initializing Prism match-braces with alternative approach...');
+    
+    // Method 1: Try to trigger the complete hook directly
+    setTimeout(() => {
+      try {
+        const event = {
+          element: this.previewOutput,
+          language: 'jsx',
+          grammar: window.Prism.languages.jsx || window.Prism.languages.javascript,
+          code: this.previewOutput.textContent
+        };
+        
+        console.log('Triggering Prism complete hook for match-braces...');
+        window.Prism.hooks.run('complete', event);
+        
+        // Method 2: If that doesn't work, try to manually process the tokens
+        this.manuallyInitializeMatchBraces();
+        
+      } catch (error) {
+        console.error('Error initializing match-braces:', error);
+      }
+    }, 200);
+  }
+
+  manuallyInitializeMatchBraces() {
+    console.log('Attempting manual match-braces initialization...');
+    
+    const preElement = this.previewOutput.parentElement;
+    const punctuationTokens = this.previewOutput.querySelectorAll('.token.punctuation');
+    
+    console.log(`Found ${punctuationTokens.length} punctuation tokens`);
+    
+    // Add necessary classes and IDs for brace matching
+    const bracketMap = { '(': ')', '[': ']', '{': '}' };
+    const openBrackets = Object.keys(bracketMap);
+    const closeBrackets = Object.values(bracketMap);
+    const bracketStack = [];
+    let pairId = 0;
+
+    punctuationTokens.forEach((token, index) => {
+      const text = token.textContent.trim();
+      
+      // Skip JSX tags
+      if (text === '<' || text === '>') return;
+      
+      if (openBrackets.includes(text)) {
+        // Opening bracket
+        const currentPairId = `pair-${pairId++}-`;
+        token.id = currentPairId + 'open';
+        bracketStack.push({ token, text, pairId: currentPairId, closingBracket: bracketMap[text] });
+        
+        // Add event listeners
+        this.addBraceEventListeners(token);
+        
+      } else if (closeBrackets.includes(text)) {
+        // Closing bracket - find matching opening bracket
+        for (let i = bracketStack.length - 1; i >= 0; i--) {
+          if (bracketStack[i].closingBracket === text) {
+            const openToken = bracketStack[i];
+            token.id = openToken.pairId + 'close';
+            bracketStack.splice(i, 1);
+            
+            // Add event listeners
+            this.addBraceEventListeners(token);
+            break;
+          }
+        }
+      }
+    });
+    
+    console.log('Manual match-braces initialization completed');
+  }
+
+  addBraceEventListeners(token) {
+    const getMatchingBrace = (element) => {
+      const id = element.id;
+      if (!id) return null;
+      
+      const match = id.match(/^(pair-\d+-)(open|close)$/);
+      if (!match) return null;
+      
+      const [, pairId, type] = match;
+      const oppositeType = type === 'open' ? 'close' : 'open';
+      const matchingId = pairId + oppositeType;
+      
+      return document.getElementById(matchingId);
+    };
+
+    // Hover events
+    token.addEventListener('mouseenter', () => {
+      const matching = getMatchingBrace(token);
+      if (matching) {
+        token.classList.add('brace-hover');
+        matching.classList.add('brace-hover');
+      }
+    });
+
+    token.addEventListener('mouseleave', () => {
+      const matching = getMatchingBrace(token);
+      if (matching) {
+        token.classList.remove('brace-hover');
+        matching.classList.remove('brace-hover');
+      }
+    });
+
+    // Click events
+    token.addEventListener('click', () => {
+      // Clear previous selections
+      document.querySelectorAll('.brace-selected').forEach(el => {
+        el.classList.remove('brace-selected');
+      });
+      
+      const matching = getMatchingBrace(token);
+      if (matching) {
+        token.classList.add('brace-selected');
+        matching.classList.add('brace-selected');
+      }
+    });
   }
 
   copyToClipboard() {

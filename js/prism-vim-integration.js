@@ -106,7 +106,12 @@ class PrismVimHighlighter {
       const prismTokens = Prism.tokenize(code, Prism.languages[this.language]);
       
       // Convert to VimTokens with position tracking
-      return this.convertPrismTokensToVim(prismTokens, code);
+      const vimTokens = this.convertPrismTokensToVim(prismTokens, code);
+      
+      // Apply rainbow bracket classes
+      this.applyRainbowBrackets(vimTokens);
+      
+      return vimTokens;
     } catch (error) {
       console.error('Prism tokenization failed:', error);
       return this.fallbackTokenize(code);
@@ -257,6 +262,69 @@ class PrismVimHighlighter {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+  
+  /**
+   * Apply rainbow bracket classes to punctuation tokens
+   */
+  applyRainbowBrackets(vimTokens) {
+    const bracketMap = {
+      '(': 'brace-round',
+      ')': 'brace-round',
+      '[': 'brace-square', 
+      ']': 'brace-square',
+      '{': 'brace-curly',
+      '}': 'brace-curly'
+    };
+    
+    const openBrackets = ['(', '[', '{'];
+    const closeBrackets = [')', ']', '}'];
+    const bracketPairs = {'(': ')', '[': ']', '{': '}'};
+    
+    const bracketStack = [];
+    let bracketLevel = 0;
+    
+    for (let i = 0; i < vimTokens.length; i++) {
+      const token = vimTokens[i];
+      
+      // Check if this is a punctuation token with brackets
+      // BUT exclude JSX/HTML tags (< and > should keep their original colors)
+      if (token.prismClasses && token.prismClasses.includes('punctuation')) {
+        const content = token.value.trim();
+        
+        // Skip JSX/HTML angle brackets - they should keep their original tag colors
+        if (content === '<' || content === '>') {
+          continue;
+        }
+        
+        if (bracketMap[content]) {
+          // Add base bracket class
+          token.prismClasses.push(bracketMap[content]);
+          
+          if (openBrackets.includes(content)) {
+            // Opening bracket
+            bracketLevel++;
+            token.prismClasses.push(`brace-level-${((bracketLevel - 1) % 12) + 1}`);
+            bracketStack.push({
+              type: content,
+              level: bracketLevel,
+              tokenIndex: i
+            });
+          } else if (closeBrackets.includes(content)) {
+            // Closing bracket
+            if (bracketStack.length > 0) {
+              const lastOpen = bracketStack[bracketStack.length - 1];
+              if (bracketPairs[lastOpen.type] === content) {
+                // Matching pair found
+                token.prismClasses.push(`brace-level-${((lastOpen.level - 1) % 12) + 1}`);
+                bracketStack.pop();
+                bracketLevel = Math.max(0, bracketLevel - 1);
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 

@@ -178,6 +178,12 @@ textarea.form-control {
   border-radius: 0 0 6px 6px;
 }
 
+.editor-panel pre {
+  margin: 0;
+  background: var(--bg0);
+  border-radius: 0 0 6px 6px;
+}
+
 .code-block {
   background: var(--bg0-hard);
   padding: 16px;
@@ -187,6 +193,13 @@ textarea.form-control {
   position: relative;
   border-radius: 5px;
   color: #ebdbb2;
+  /* Enable rainbow braces */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  display: block;
+  margin: 0;
 }
 
 .placeholder {
@@ -419,6 +432,27 @@ textarea.form-control {
   color: #67cdcc;
 }
 
+/* JSX/HTML tags should keep their original colors and override rainbow brackets */
+.token.tag,
+.token.attr-name,
+.token.namespace,
+.token.deleted {
+  color: #e2777a !important;
+}
+
+/* JSX tag punctuation (< >) should keep original color */
+.token.tag .token.punctuation,
+.token.punctuation.tag {
+  color: #e2777a !important;
+}
+
+/* Ensure JSX tags are never overridden by rainbow brackets */
+.rainbow-braces .token.tag,
+.rainbow-braces .token.tag .token.punctuation,
+.rainbow-braces .token.punctuation.tag {
+  color: #e2777a !important;
+}
+
 /* ========================================
    VISUAL SELECTION WITH TOMORROW THEME COLORS PRESERVED
    ======================================== */
@@ -507,6 +541,21 @@ textarea.form-control {
   background: rgba(103, 205, 204, 0.25) !important;
 }
 
+/* JSX tag punctuation during selection - override rainbow brackets */
+.visual-selection.token.tag .token.punctuation,
+.visual-selection.token.punctuation.tag {
+  color: #e2777a !important;
+  background: rgba(226, 119, 122, 0.25) !important;
+}
+
+/* Ensure JSX tags during selection are never overridden by rainbow brackets */
+.rainbow-braces .visual-selection.token.tag,
+.rainbow-braces .visual-selection.token.tag .token.punctuation,
+.rainbow-braces .visual-selection.token.punctuation.tag {
+  color: #e2777a !important;
+  background: rgba(226, 119, 122, 0.25) !important;
+}
+
 /* ========================================
    VISUAL BLOCK CURSOR WITH TOMORROW THEME COLORS
    ======================================== */
@@ -577,6 +626,21 @@ textarea.form-control {
 .visual-block-cursor.token.operator,
 .visual-block-cursor.token.punctuation {
   background-color: #ccc !important;
+  color: #2d2d2d !important;
+}
+
+/* JSX tag punctuation during visual block cursor - override rainbow brackets */
+.visual-block-cursor.token.tag .token.punctuation,
+.visual-block-cursor.token.punctuation.tag {
+  background-color: #e2777a !important;
+  color: #2d2d2d !important;
+}
+
+/* Ensure JSX tags during visual block cursor are never overridden by rainbow brackets */
+.rainbow-braces .visual-block-cursor.token.tag,
+.rainbow-braces .visual-block-cursor.token.tag .token.punctuation,
+.rainbow-braces .visual-block-cursor.token.punctuation.tag {
+  background-color: #e2777a !important;
   color: #2d2d2d !important;
 }
 
