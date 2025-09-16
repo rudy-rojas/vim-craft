@@ -43,7 +43,7 @@ class PrismLoader {
   }
 
   /**
-   * Load Prism core
+   * Load Prism core from local files
    */
   _loadPrismCore() {
     return new Promise((resolve, reject) => {
@@ -53,12 +53,12 @@ class PrismLoader {
       }
 
       const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';
+      script.src = './vendor/prism/prism-core.js';  // Local file
       script.onload = () => {
-        console.log('Prism core loaded');
+        console.log('Prism core loaded from local file');
         resolve();
       };
-      script.onerror = () => reject(new Error('Failed to load Prism core'));
+      script.onerror = () => reject(new Error('Failed to load local Prism core'));
       document.head.appendChild(script);
     });
   }
@@ -91,7 +91,7 @@ class PrismLoader {
   }
 
   /**
-   * Load a single language component
+   * Load a single language component from local files
    */
   _loadLanguageComponent(language) {
     return new Promise((resolve, reject) => {
@@ -102,7 +102,7 @@ class PrismLoader {
       }
 
       const script = document.createElement('script');
-      script.src = `https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-${language}.min.js`;
+      script.src = `./vendor/prism/components/prism-${language}.js`;  // Local file
       console.log(`----SRC: ${script.src}`)
       script.onload = () => {
         console.log(`Prism ${language} component loaded`);
@@ -117,7 +117,7 @@ class PrismLoader {
   }
 
   /**
-   * Load Prism CSS theme
+   * Load Prism CSS theme from local file
    */
   _loadPrismCSS() {
     return new Promise((resolve) => {
@@ -130,13 +130,13 @@ class PrismLoader {
 
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css';
+      link.href = './vendor/prism/themes/prism-tomorrow.css';  // Tema Tomorrow
       link.onload = () => {
-        console.log('Prism CSS theme loaded');
+        console.log('Prism CSS theme loaded from local file');
         resolve();
       };
       link.onerror = () => {
-        console.warn('Failed to load Prism CSS theme');
+        console.warn('Failed to load local Prism CSS theme');
         resolve(); // Continue without theme
       };
       document.head.appendChild(link);

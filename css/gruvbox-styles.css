@@ -612,20 +612,25 @@ textarea.form-control {
    PRISM.JS SYNTAX HIGHLIGHTING STYLES  
    ======================================== */
 
-/* Base token styles */
+/* Base token styles - Tomorrow Night theme integration */
 .token {
-  color: var(--fg1);
+  color: #ccc;
 }
 
 /* Keywords */
-.token.keyword {
-  color: var(--red);
+.token.keyword,
+.token.builtin {
+  color: #cc99cd;
   font-weight: bold;
 }
 
 /* Strings */
-.token.string {
-  color: var(--green);
+.token.string,
+.token.char,
+.token.attr-value,
+.token.regex,
+.token.variable {
+  color: #7ec699;
 }
 
 /* Comments */
@@ -633,73 +638,63 @@ textarea.form-control {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-  color: var(--gray);
+  color: #999;
   font-style: italic;
 }
 
-/* Numbers */
-.token.number {
-  color: var(--purple);
+/* Numbers and functions */
+.token.number,
+.token.function {
+  color: #f08d49;
 }
 
 /* Operators and punctuation */
 .token.operator,
 .token.punctuation {
-  color: var(--fg1);
+  color: #ccc;
 }
 
-/* Functions */
-.token.function {
-  color: var(--blue);
+/* Function names */
+.token.function-name {
+  color: #6196cc;
 }
 
-/* Class names */
-.token.class-name {
-  color: var(--yellow);
-}
-
-/* Variables and properties */
+/* Class names, properties, constants */
+.token.class-name,
 .token.property,
-.token.variable {
-  color: var(--aqua);
+.token.constant,
+.token.symbol {
+  color: #f8c555;
 }
 
 /* Booleans and constants */
-.token.boolean,
-.token.constant {
-  color: var(--orange);
+.token.boolean {
+  color: #f08d49;
 }
 
 /* Tags (HTML) */
-.token.tag {
-  color: var(--red);
+.token.tag,
+.token.attr-name,
+.token.namespace,
+.token.deleted {
+  color: #e2777a;
 }
 
-/* Attributes */
-.token.attr-name {
-  color: var(--orange);
+/* Selectors and important */
+.token.selector,
+.token.important,
+.token.atrule {
+  color: #cc99cd;
 }
 
-.token.attr-value {
-  color: var(--green);
-}
-
-/* CSS specific */
-.token.selector {
-  color: var(--red);
-}
-
-.token.property {
-  color: var(--blue);
-}
-
-.token.important {
-  color: var(--red);
-  font-weight: bold;
+/* URLs and entities */
+.token.entity,
+.token.url {
+  color: #67cdcc;
 }
 
 /* ========================================
-   VISUAL SELECTION WITH PRISM COLORS PRESERVED
+   VISUAL SELECTION WITH TOMORROW THEME COLORS PRESERVED
    ======================================== */
 
 /* Base visual selection - only changes background, preserves text color */
@@ -711,134 +706,156 @@ textarea.form-control {
   /* Do NOT set color here - let Prism classes control text color */
 }
 
-/* Preserve Prism.js colors during visual selection */
-.visual-selection.token.keyword {
-  color: var(--red) !important;
-  background: rgba(251, 73, 52, 0.25) !important;
+/* Preserve Tomorrow Night theme colors during visual selection */
+.visual-selection.token.keyword,
+.visual-selection.token.builtin {
+  color: #cc99cd !important;
+  background: rgba(204, 153, 205, 0.25) !important;
 }
 
-.visual-selection.token.string {
-  color: var(--green) !important;
-  background: rgba(184, 187, 38, 0.25) !important;
-}
-
-.visual-selection.token.comment {
-  color: var(--gray) !important;
-  background: rgba(146, 131, 116, 0.25) !important;
-}
-
-.visual-selection.token.number {
-  color: var(--purple) !important;
-  background: rgba(211, 134, 155, 0.25) !important;
-}
-
-.visual-selection.token.function {
-  color: var(--blue) !important;
-  background: rgba(131, 165, 152, 0.25) !important;
-}
-
-.visual-selection.token.class-name {
-  color: var(--yellow) !important;
-  background: rgba(250, 189, 47, 0.25) !important;
-}
-
-.visual-selection.token.property,
+.visual-selection.token.string,
+.visual-selection.token.char,
+.visual-selection.token.attr-value,
+.visual-selection.token.regex,
 .visual-selection.token.variable {
-  color: var(--aqua) !important;
-  background: rgba(142, 192, 124, 0.25) !important;
+  color: #7ec699 !important;
+  background: rgba(126, 198, 153, 0.25) !important;
 }
 
-.visual-selection.token.boolean,
-.visual-selection.token.constant {
-  color: var(--orange) !important;
-  background: rgba(254, 128, 25, 0.25) !important;
+.visual-selection.token.comment,
+.visual-selection.token.prolog,
+.visual-selection.token.doctype,
+.visual-selection.token.cdata {
+  color: #999 !important;
+  background: rgba(153, 153, 153, 0.25) !important;
+}
+
+.visual-selection.token.number,
+.visual-selection.token.function {
+  color: #f08d49 !important;
+  background: rgba(240, 141, 73, 0.25) !important;
+}
+
+.visual-selection.token.function-name {
+  color: #6196cc !important;
+  background: rgba(97, 150, 204, 0.25) !important;
+}
+
+.visual-selection.token.class-name,
+.visual-selection.token.property,
+.visual-selection.token.constant,
+.visual-selection.token.symbol {
+  color: #f8c555 !important;
+  background: rgba(248, 197, 85, 0.25) !important;
+}
+
+.visual-selection.token.boolean {
+  color: #f08d49 !important;
+  background: rgba(240, 141, 73, 0.25) !important;
+}
+
+.visual-selection.token.tag,
+.visual-selection.token.attr-name,
+.visual-selection.token.namespace,
+.visual-selection.token.deleted {
+  color: #e2777a !important;
+  background: rgba(226, 119, 122, 0.25) !important;
+}
+
+.visual-selection.token.selector,
+.visual-selection.token.important,
+.visual-selection.token.atrule {
+  color: #cc99cd !important;
+  background: rgba(204, 153, 205, 0.25) !important;
 }
 
 .visual-selection.token.operator,
 .visual-selection.token.punctuation {
-  color: var(--fg1) !important;
-  background: rgba(131, 165, 152, 0.25) !important;
+  color: #ccc !important;
+  background: rgba(204, 204, 204, 0.25) !important;
 }
 
-.visual-selection.token.tag {
-  color: var(--red) !important;
-  background: rgba(251, 73, 52, 0.25) !important;
-}
-
-.visual-selection.token.attr-name {
-  color: var(--orange) !important;
-  background: rgba(254, 128, 25, 0.25) !important;
-}
-
-.visual-selection.token.attr-value {
-  color: var(--green) !important;
-  background: rgba(184, 187, 38, 0.25) !important;
+.visual-selection.token.entity,
+.visual-selection.token.url {
+  color: #67cdcc !important;
+  background: rgba(103, 205, 204, 0.25) !important;
 }
 
 /* ========================================
-   VISUAL BLOCK CURSOR WITH PRISM COLORS
+   VISUAL BLOCK CURSOR WITH TOMORROW THEME COLORS
    ======================================== */
 
-/* Visual block cursor - preserve syntax colors but with contrasting background */
-.visual-block-cursor.token.keyword {
-  background-color: var(--red) !important;
-  color: var(--bg0-hard) !important;
+/* Visual block cursor - use Tomorrow Night colors as background */
+.visual-block-cursor.token.keyword,
+.visual-block-cursor.token.builtin {
+  background-color: #cc99cd !important;
+  color: #2d2d2d !important;
 }
 
-.visual-block-cursor.token.string {
-  background-color: var(--green) !important;
-  color: var(--bg0-hard) !important;
-}
-
-.visual-block-cursor.token.comment {
-  background-color: var(--gray) !important;
-  color: var(--bg0-hard) !important;
-}
-
-.visual-block-cursor.token.number {
-  background-color: var(--purple) !important;
-  color: var(--bg0-hard) !important;
-}
-
-.visual-block-cursor.token.function {
-  background-color: var(--blue) !important;
-  color: var(--bg0-hard) !important;
-}
-
-.visual-block-cursor.token.class-name {
-  background-color: var(--yellow) !important;
-  color: var(--bg0-hard) !important;
-}
-
-.visual-block-cursor.token.property,
+.visual-block-cursor.token.string,
+.visual-block-cursor.token.char,
+.visual-block-cursor.token.attr-value,
+.visual-block-cursor.token.regex,
 .visual-block-cursor.token.variable {
-  background-color: var(--aqua) !important;
-  color: var(--bg0-hard) !important;
+  background-color: #7ec699 !important;
+  color: #2d2d2d !important;
 }
 
-.visual-block-cursor.token.boolean,
-.visual-block-cursor.token.constant {
-  background-color: var(--orange) !important;
-  color: var(--bg0-hard) !important;
+.visual-block-cursor.token.comment,
+.visual-block-cursor.token.prolog,
+.visual-block-cursor.token.doctype,
+.visual-block-cursor.token.cdata {
+  background-color: #999 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.number,
+.visual-block-cursor.token.function {
+  background-color: #f08d49 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.function-name {
+  background-color: #6196cc !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.class-name,
+.visual-block-cursor.token.property,
+.visual-block-cursor.token.constant,
+.visual-block-cursor.token.symbol {
+  background-color: #f8c555 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.boolean {
+  background-color: #f08d49 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.tag,
+.visual-block-cursor.token.attr-name,
+.visual-block-cursor.token.namespace,
+.visual-block-cursor.token.deleted {
+  background-color: #e2777a !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.selector,
+.visual-block-cursor.token.important,
+.visual-block-cursor.token.atrule {
+  background-color: #cc99cd !important;
+  color: #2d2d2d !important;
 }
 
 .visual-block-cursor.token.operator,
 .visual-block-cursor.token.punctuation {
-  background-color: var(--fg1) !important;
-  color: var(--bg0-hard) !important;
+  background-color: #ccc !important;
+  color: #2d2d2d !important;
 }
 
-.visual-block-cursor.token.tag {
-  background-color: var(--red) !important;
-  color: var(--bg0-hard) !important;
-}
-
-.visual-block-cursor.token.attr-name {
-  background-color: var(--orange) !important;
-  color: var(--bg0-hard) !important;
-}
-
-.visual-block-cursor.token.attr-value {
-  background-color: var(--green) !important;
-  color: var(--bg0-hard) !important;
+.visual-block-cursor.token.entity,
+.visual-block-cursor.token.url {
+  background-color: #67cdcc !important;
+  color: #2d2d2d !important;
 }

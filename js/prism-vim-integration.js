@@ -294,9 +294,9 @@ class PrismVimHighlighterFactory {
     }
     
     return new Promise((resolve, reject) => {
-      // Load core Prism
+      // Load core Prism from local file
       const coreScript = document.createElement('script');
-      coreScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';
+      coreScript.src = './vendor/prism/prism-core.js';  // Local file
       coreScript.onload = () => {
         // Load additional components if specified
         if (components.length > 0) {
@@ -305,21 +305,21 @@ class PrismVimHighlighterFactory {
           resolve(true);
         }
       };
-      coreScript.onerror = () => reject(new Error('Failed to load Prism.js'));
+      coreScript.onerror = () => reject(new Error('Failed to load local Prism.js'));
       document.head.appendChild(coreScript);
     });
   }
   
   /**
-   * Load specific Prism components
+   * Load specific Prism components from local files
    */
   static async loadPrismComponents(components) {
     const promises = components.map(component => {
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = `https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-${component}.min.js`;
+        script.src = `./vendor/prism/components/prism-${component}.js`;  // Local file
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error(`Failed to load prism-${component}.js`));
+        script.onerror = () => reject(new Error(`Failed to load local prism-${component}.js`));
         document.head.appendChild(script);
       });
     });
