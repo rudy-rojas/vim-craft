@@ -20,6 +20,7 @@ class NeovimHandler {
     this.modeSelect = document.getElementById('mode-select');
     this.sourceCodeTextarea = document.getElementById('source-code');
     this.convertBtn = document.getElementById('convert-btn');
+    this.clearBtn = document.getElementById('clear-btn');
     this.copyBtn = document.getElementById('copy-btn');
     this.copyPreviewBtn = document.getElementById('copy-preview-btn');
     this.previewOutput = document.getElementById('preview-output');
@@ -35,6 +36,7 @@ class NeovimHandler {
 
   initEventListeners() {
     this.convertBtn.addEventListener('click', () => this.handleConvert());
+    this.clearBtn.addEventListener('click', () => this.handleClear());
     this.copyBtn.addEventListener('click', () => this.copyToClipboard());
     this.copyPreviewBtn.addEventListener('click', () => this.copyPreviewToClipboard());
     
@@ -126,6 +128,13 @@ class NeovimHandler {
       console.error('Stack trace:', error.stack);
       alert('Error processing code. Please check your input.');
     }
+  }
+
+  handleClear() {
+    this.sourceCodeTextarea.value = '';
+    this.sourceCodeTextarea.focus();
+    this.updateUI(); // Update selection info
+    console.log('Source code cleared');
   }
 
   async initializeSimulator(language) {

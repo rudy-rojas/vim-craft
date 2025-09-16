@@ -96,6 +96,7 @@ console.log(message);</textarea>
           </div>
         </div>
 
+        <button id="clean-btn" class="convert-button" style="background: var(--gray); margin-right: 10px;">Clear</button>
         <button id="convert-btn" class="convert-button">Convert</button>
       </div>
 
@@ -182,6 +183,20 @@ console.log(message);</textarea>
       });
       
       addLog('Debug logger initialized', 'info');
+      
+      // Add Clean button functionality
+      document.addEventListener('DOMContentLoaded', function() {
+        const cleanBtn = document.getElementById('clean-btn');
+        const sourceCodeTextarea = document.getElementById('source-code');
+        
+        if (cleanBtn && sourceCodeTextarea) {
+          cleanBtn.addEventListener('click', function() {
+            sourceCodeTextarea.value = '';
+            sourceCodeTextarea.focus();
+            addLog('Source code cleared', 'info');
+          });
+        }
+      });
     </script>
 
     <!-- Load the main application as an ES module -->
