@@ -290,20 +290,40 @@ class NeovimHandler {
       return document.getElementById(matchingId);
     };
 
+    const applyHoverStyle = (element, isHover) => {
+      if (isHover) {
+        element.classList.add('brace-hover');
+        
+        // Get the computed color of the element
+        const computedStyle = window.getComputedStyle(element);
+        const color = computedStyle.color;
+        
+        // Apply a subtle background with the same color at low opacity
+        const rgb = color.match(/\d+/g);
+        if (rgb && rgb.length >= 3) {
+          const bgColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.15)`;
+          element.style.backgroundColor = bgColor;
+        }
+      } else {
+        element.classList.remove('brace-hover');
+        element.style.backgroundColor = '';
+      }
+    };
+
     // Hover events
     token.addEventListener('mouseenter', () => {
       const matching = getMatchingBrace(token);
       if (matching) {
-        token.classList.add('brace-hover');
-        matching.classList.add('brace-hover');
+        applyHoverStyle(token, true);
+        applyHoverStyle(matching, true);
       }
     });
 
     token.addEventListener('mouseleave', () => {
       const matching = getMatchingBrace(token);
       if (matching) {
-        token.classList.remove('brace-hover');
-        matching.classList.remove('brace-hover');
+        applyHoverStyle(token, false);
+        applyHoverStyle(matching, false);
       }
     });
 
@@ -312,12 +332,23 @@ class NeovimHandler {
       // Clear previous selections
       document.querySelectorAll('.brace-selected').forEach(el => {
         el.classList.remove('brace-selected');
+        el.style.backgroundColor = '';
       });
       
       const matching = getMatchingBrace(token);
       if (matching) {
         token.classList.add('brace-selected');
         matching.classList.add('brace-selected');
+        
+        // Apply stronger background for selection
+        const computedStyle = window.getComputedStyle(token);
+        const color = computedStyle.color;
+        const rgb = color.match(/\d+/g);
+        if (rgb && rgb.length >= 3) {
+          const bgColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.25)`;
+          token.style.backgroundColor = bgColor;
+          matching.style.backgroundColor = bgColor;
+        }
       }
     });
   }

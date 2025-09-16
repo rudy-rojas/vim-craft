@@ -2,9 +2,16 @@
 .token.punctuation.brace-selected,
 .brace-hover,
 .brace-selected {
-	outline: solid 2px #ffff00;
-	background-color: rgba(255, 255, 0, 0.2);
-	border-radius: 2px;
+	outline: solid 1px currentColor;
+	box-shadow: 0 0 4px currentColor;
+	transition: all 0.2s ease;
+}
+
+/* Stronger effect for selected braces */
+.token.punctuation.brace-selected,
+.brace-selected {
+	outline-width: 2px;
+	box-shadow: 0 0 6px currentColor;
 }
 
 .rainbow-braces .token.punctuation.brace-level-1,

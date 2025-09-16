@@ -388,7 +388,10 @@ textarea.form-control {
 }
 
 /* Operators and punctuation */
-.token.operator,
+.token.operator {
+  color: #67cdcc;
+}
+
 .token.punctuation {
   color: #ccc;
 }
@@ -529,7 +532,11 @@ textarea.form-control {
   background: rgba(204, 153, 205, 0.25) !important;
 }
 
-.visual-selection.token.operator,
+.visual-selection.token.operator {
+  color: #67cdcc !important;
+  background: rgba(103, 205, 204, 0.25) !important;
+}
+
 .visual-selection.token.punctuation {
   color: #ccc !important;
   background: rgba(204, 204, 204, 0.25) !important;
@@ -623,7 +630,11 @@ textarea.form-control {
   color: #2d2d2d !important;
 }
 
-.visual-block-cursor.token.operator,
+.visual-block-cursor.token.operator {
+  background-color: #67cdcc !important;
+  color: #2d2d2d !important;
+}
+
 .visual-block-cursor.token.punctuation {
   background-color: #ccc !important;
   color: #2d2d2d !important;
