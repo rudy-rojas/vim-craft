@@ -23,6 +23,23 @@ class VimToken {
   }
   
   /**
+   * Create a copy of this VimToken with new position and value
+   */
+  copy(newType, newValue, newStart, newEnd) {
+    const newToken = new VimToken(newType, newValue, newStart, newEnd, this.prismToken);
+    
+    // Preserve Prism classes
+    newToken.prismClasses = [...this.prismClasses];
+    
+    // Preserve Vim-specific properties (but reset selection/cursor state)
+    newToken.cursor = null;
+    newToken.selected = false;
+    newToken.isLastSelectedChar = false;
+    
+    return newToken;
+  }
+  
+  /**
    * Create VimToken from Prism token
    */
   static fromPrismToken(prismToken, start, end) {

@@ -9,22 +9,40 @@ class VisualEffectsProcessor {
   }
   
   // Helper method to create tokens - works with both Token and VimToken
-  createToken(type, value, start, end) {
-    // Check if we have VimToken available (from Prism integration)
-    if (typeof window !== 'undefined' && window.VimToken) {
-      return new window.VimToken(type, value, start, end);
+  createToken(type, value, start, end, originalToken = null) {
+    let newToken;
+    
+    // If we have an original token and it has a copy method (VimToken), use it
+    if (originalToken && typeof originalToken.copy === 'function') {
+      newToken = originalToken.copy(type, value, start, end);
+    } else if (typeof window !== 'undefined' && window.VimToken) {
+      // Check if we have VimToken available (from Prism integration)
+      newToken = new window.VimToken(type, value, start, end);
+      
+      // Preserve Prism classes from original token when splitting
+      if (originalToken && originalToken.prismClasses) {
+        newToken.prismClasses = [...originalToken.prismClasses];
+      }
+    } else {
+      // Fallback to basic token object
+      newToken = {
+        type,
+        value,
+        start,
+        end,
+        cursor: null,
+        selected: false,
+        isLastSelectedChar: false,
+        prismClasses: []
+      };
+      
+      // Preserve Prism classes from original token when splitting
+      if (originalToken && originalToken.prismClasses) {
+        newToken.prismClasses = [...originalToken.prismClasses];
+      }
     }
-    // Fallback to basic token object
-    return {
-      type,
-      value,
-      start,
-      end,
-      cursor: null,
-      selected: false,
-      isLastSelectedChar: false,
-      prismClasses: []
-    };
+    
+    return newToken;
   }
 
   process(tokens, mode, selectionStart, selectionEnd) {
@@ -72,11 +90,11 @@ class VisualEffectsProcessor {
         const newTokens = [];
         
         if (beforeCursor) {
-          newTokens.push(this.createToken(token.type, beforeCursor, token.start, token.start + beforeCursor.length));
+          newTokens.push(this.createToken(token.type, beforeCursor, token.start, token.start + beforeCursor.length, token));
         }
         
         if (atCursor) {
-          const cursorToken = this.createToken(token.type, atCursor, position, position + 1);
+          const cursorToken = this.createToken(token.type, atCursor, position, position + 1, token);
           cursorToken.cursor = cursorClass;
           newTokens.push(cursorToken);
         } else if (cursorClass === 'cursor-insert') {
@@ -87,7 +105,7 @@ class VisualEffectsProcessor {
         }
         
         if (afterCursor) {
-          newTokens.push(this.createToken(token.type, afterCursor, position + 1, token.end));
+          newTokens.push(this.createToken(token.type, afterCursor, position + 1, token.end, token));
         }
 
         result.splice(i, 1, ...newTokens);
@@ -134,7 +152,8 @@ class VisualEffectsProcessor {
         token.type,
         value.substring(0, beforeLength),
         token.start,
-        selectionStart
+        selectionStart,
+        token
       ));
     }
     
@@ -159,7 +178,8 @@ class VisualEffectsProcessor {
             token.type,
             beforeLastChar,
             actualSelectionStart,
-            actualSelectionStart + lastCharRelativePos
+            actualSelectionStart + lastCharRelativePos,
+            token
           );
           beforeToken.selected = true;
           tokens.push(beforeToken);
@@ -172,7 +192,8 @@ class VisualEffectsProcessor {
             token.type,
             lastChar,
             lastSelectedPosition,
-            lastSelectedPosition + 1
+            lastSelectedPosition + 1,
+            token
           );
           lastCharToken.selected = true;
           lastCharToken.isLastSelectedChar = true; // Marcamos como último carácter
@@ -186,7 +207,8 @@ class VisualEffectsProcessor {
             token.type,
             remainingSelection,
             lastSelectedPosition + 1,
-            actualSelectionEnd
+            actualSelectionEnd,
+            token
           );
           afterToken.selected = true;
           tokens.push(afterToken);
@@ -197,7 +219,8 @@ class VisualEffectsProcessor {
           token.type,
           selectionValue,
           actualSelectionStart,
-          actualSelectionEnd
+          actualSelectionEnd,
+          token
         );
         selectionToken.selected = true;
         tokens.push(selectionToken);
@@ -211,7 +234,8 @@ class VisualEffectsProcessor {
         token.type,
         value.substring(afterStartInToken),
         selectionEnd,
-        token.end
+        token.end,
+        token
       ));
     }
     
@@ -365,6 +389,7 @@ class NeovimModeSimulator {
 // Export for ES module usage
 export {
     NeovimModeSimulator as NeovimSimulator // Export with alias for convenience
-    , TokenRenderer, VisualEffectsProcessor
+    ,
+    TokenRenderer, VisualEffectsProcessor
 };
 
