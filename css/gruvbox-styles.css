@@ -352,9 +352,9 @@ textarea.form-control {
    ======================================== */
 
 /* Base token styles - Tomorrow Night theme integration */
-.token {
+/* .token {
   color: #ccc;
-}
+} */
 
 /* Keywords */
 .token.keyword,

@@ -3,33 +3,35 @@
 // and adds Vim simulation capabilities on top
 
 /**
- * Enhanced Token class that extends Prism's capabilities with Vim-specific features
+ * Enhanced Token class with accurate content preservation
  */
 class VimToken {
-  constructor(type, value, start, end, prismToken = null) {
-    this.type = type;
-    this.value = value;
-    this.start = start;
-    this.end = end;
+  constructor(content, type = 'text', cssClasses = [], context = '') {
+    this.content = content;         // The actual text content
+    this.type = type;               // Token type from Prism
+    this.cssClasses = cssClasses;   // Array of CSS classes to apply
+    this.context = context;         // Additional context information
     
     // Vim-specific properties
-    this.cursor = null;              // Para efectos de cursor
-    this.selected = false;           // Para selección visual
-    this.isLastSelectedChar = false; // Para marcar el último carácter seleccionado
+    this.cursor = null;              
+    this.selected = false;           
+    this.isLastSelectedChar = false; 
     
-    // Prism integration
-    this.prismToken = prismToken;    // Reference to original Prism token
-    this.prismClasses = [];          // CSS classes from Prism
+    // Legacy compatibility
+    this.value = content;           // For backward compatibility
+    this.prismClasses = cssClasses; // For backward compatibility
   }
   
   /**
-   * Create a copy of this VimToken with new position and value
+   * Create a copy of this VimToken with new properties
    */
-  copy(newType, newValue, newStart, newEnd) {
-    const newToken = new VimToken(newType, newValue, newStart, newEnd, this.prismToken);
-    
-    // Preserve Prism classes
-    newToken.prismClasses = [...this.prismClasses];
+  copy(newContent, newType, newCssClasses) {
+    const newToken = new VimToken(
+      newContent || this.content, 
+      newType || this.type, 
+      newCssClasses || this.cssClasses, 
+      this.context
+    );
     
     // Preserve Vim-specific properties (but reset selection/cursor state)
     newToken.cursor = null;
@@ -38,48 +40,10 @@ class VimToken {
     
     return newToken;
   }
-  
-  /**
-   * Create VimToken from Prism token
-   */
-  static fromPrismToken(prismToken, start, end) {
-    const token = new VimToken(
-      prismToken.type || 'text',
-      prismToken.content || prismToken,
-      start,
-      end,
-      prismToken
-    );
-    
-    // Extract CSS classes from Prism token with better handling
-    if (prismToken.type) {
-      token.prismClasses = ['token', prismToken.type];
-      
-      // Handle aliases (important for CSS and HTML tokens)
-      if (prismToken.alias) {
-        if (Array.isArray(prismToken.alias)) {
-          token.prismClasses.push(...prismToken.alias);
-        } else {
-          token.prismClasses.push(prismToken.alias);
-        }
-      }
-      
-      // Special handling for specific token types
-      if (prismToken.type === 'tag' && prismToken.content) {
-        // For HTML tags, preserve the tag structure
-        token.prismClasses.push('tag');
-      } else if (prismToken.type === 'property' || prismToken.type === 'selector') {
-        // For CSS properties and selectors
-        token.prismClasses.push(prismToken.type);
-      }
-    }
-    
-    return token;
-  }
 }
 
 /**
- * Prism-powered highlighter with Vim capabilities
+ * Simple and accurate Prism to Vim token converter
  */
 class PrismVimHighlighter {
   constructor(language = 'javascript') {
@@ -87,235 +51,237 @@ class PrismVimHighlighter {
     this.ensurePrismLoaded();
   }
   
-  /**
-   * Ensure Prism.js is available
-   */
   ensurePrismLoaded() {
     if (typeof Prism === 'undefined') {
-      console.warn('Prism.js not loaded. Falling back to basic highlighting.');
+      console.warn('Prism.js not loaded');
       this.useFallback = true;
-    } else {
-      this.useFallback = false;
-      console.log('Prism.js is available');
-      console.log('Available languages:', Object.keys(Prism.languages));
-      
-      // Ensure the language is loaded
-      if (!Prism.languages[this.language]) {
-        console.warn(`Language ${this.language} not loaded in Prism. Available languages:`, Object.keys(Prism.languages));
-        
-        // Try common fallbacks for HTML
-        if (this.language === 'html' && Prism.languages.markup) {
-          console.log('Using markup as fallback for HTML');
-          this.language = 'markup';
-        } else {
-          console.warn(`No fallback available for ${this.language}. Using basic highlighting.`);
-          this.useFallback = true;
-        }
+      return;
+    }
+    
+    if (!Prism.languages[this.language]) {
+      console.warn(`Language ${this.language} not loaded`);
+      if (this.language === 'html' && Prism.languages.markup) {
+        this.language = 'markup';
       } else {
-        console.log(`Language ${this.language} is available in Prism`);
+        this.useFallback = true;
       }
     }
+    
+    this.useFallback = false;
   }
   
   /**
-   * Tokenize code using Prism.js with position tracking
+   * Tokenize code preserving Prism's nested structure
    */
   tokenize(code) {
     if (this.useFallback) {
-      return this.fallbackTokenize(code);
+      return [new VimToken(code, 'text', [])];
     }
     
     try {
-      console.log(`Tokenizing ${this.language} code:`, code.substring(0, 100) + '...');
-      
-      // Use Prism to tokenize
+      // Get Prism tokens
       const prismTokens = Prism.tokenize(code, Prism.languages[this.language]);
-      console.log('Prism tokens:', prismTokens);
       
-      // Convert to VimTokens with position tracking
-      const vimTokens = this.convertPrismTokensToVim(prismTokens, code);
-      console.log('Converted VimTokens:', vimTokens);
+      // Convert to VimTokens preserving nested structure
+      const vimTokens = [];
+      this.convertPrismToVim(prismTokens, vimTokens);
       
-      // Apply rainbow bracket classes
+      // Verify we preserved all content
+      const originalLength = code.length;
+      const reconstructedLength = vimTokens.reduce((sum, token) => sum + token.content.length, 0);
+      
+      if (originalLength !== reconstructedLength) {
+        console.warn(`Content length mismatch: original=${originalLength}, reconstructed=${reconstructedLength}`);
+        console.warn('Falling back to simple tokenization');
+        return [new VimToken(code, 'text', [])];
+      }
+      
+      // Apply rainbow brackets
       this.applyRainbowBrackets(vimTokens);
       
       return vimTokens;
     } catch (error) {
-      console.error('Prism tokenization failed:', error);
-      return this.fallbackTokenize(code);
+      console.error('Tokenization failed:', error);
+      return [new VimToken(code, 'text', [])];
     }
   }
   
   /**
-   * Convert Prism tokens to VimTokens with accurate position tracking
+   * Convert Prism tokens to VimTokens while preserving structure
    */
-  convertPrismTokensToVim(prismTokens, originalCode) {
-    const vimTokens = [];
-    let position = 0;
-    
-    const processToken = (token, currentPos) => {
+  convertPrismToVim(prismTokens, output) {
+    for (const token of prismTokens) {
       if (typeof token === 'string') {
         // Simple string token
-        const vimToken = new VimToken('text', token, currentPos, currentPos + token.length);
-        vimTokens.push(vimToken);
-        return currentPos + token.length;
+        output.push(new VimToken(token, 'text', []));
       } else if (token && typeof token === 'object') {
-        // Prism Token object
-        const content = token.content;
-        const startPos = currentPos;
-        
-        if (typeof content === 'string') {
-          // Simple token with string content
-          const vimToken = VimToken.fromPrismToken(token, startPos, startPos + content.length);
-          vimTokens.push(vimToken);
-          return startPos + content.length;
-        } else if (Array.isArray(content)) {
-          // Nested tokens - process each one but preserve the parent token type
-          let nestedPos = startPos;
-          
-          // For tokens like CSS selectors, properties, HTML tags with complex structure
-          // we want to preserve the parent token's type for styling
-          for (const nestedToken of content) {
-            if (typeof nestedToken === 'string') {
-              // Create a token that inherits the parent's type
-              const inheritedToken = new VimToken(token.type, nestedToken, nestedPos, nestedPos + nestedToken.length);
-              inheritedToken.prismClasses = ['token', token.type];
-              
-              // Add aliases if present
-              if (token.alias) {
-                if (Array.isArray(token.alias)) {
-                  inheritedToken.prismClasses.push(...token.alias);
-                } else {
-                  inheritedToken.prismClasses.push(token.alias);
-                }
-              }
-              
-              vimTokens.push(inheritedToken);
-              nestedPos += nestedToken.length;
-            } else if (nestedToken && typeof nestedToken === 'object') {
-              // Process nested token object
-              nestedPos = processToken(nestedToken, nestedPos);
-            }
-          }
-          return nestedPos;
-        }
+        // Complex Prism token - render it as HTML and parse back
+        const renderedHTML = this.renderPrismTokenAsHTML(token);
+        const vimToken = new VimToken(
+          this.extractContent(token),
+          token.type || 'text',
+          [],  // CSS classes will be embedded in the HTML
+          token.type || ''
+        );
+        // Store the original HTML rendering for later use
+        vimToken.originalHTML = renderedHTML;
+        output.push(vimToken);
       }
-      return currentPos;
-    };
-    
-    // Process all tokens
-    for (const token of prismTokens) {
-      position = processToken(token, position);
     }
-    
-    // Handle any remaining text (shouldn't happen with proper tokenization)
-    if (position < originalCode.length) {
-      const remaining = originalCode.substring(position);
-      vimTokens.push(new VimToken('text', remaining, position, originalCode.length));
-    }
-    
-    console.log('Final VimTokens:', vimTokens);
-    return vimTokens;
   }
   
   /**
-   * Fallback tokenization when Prism is not available
+   * Render a Prism token exactly as Prism would, preserving all nesting
    */
-  fallbackTokenize(code) {
-    // Simple fallback - treat everything as text
-    return [new VimToken('text', code, 0, code.length)];
-  }
-  
-  /**
-   * Get CSS classes for a VimToken
-   */
-  getTokenClasses(vimToken) {
-    const classes = [];
-    
-    // Add Prism classes if available
-    if (vimToken.prismClasses.length > 0) {
-      classes.push(...vimToken.prismClasses);
+  renderPrismTokenAsHTML(token) {
+    if (typeof token === 'string') {
+      return this.escapeHtml(token);
     }
     
-    // Add Vim-specific classes
-    if (vimToken.cursor) {
-      classes.push(vimToken.cursor);
+    if (!token || typeof token !== 'object') {
+      return '';
     }
     
-    if (vimToken.isLastSelectedChar) {
-      classes.push('visual-block-cursor');
-    } else if (vimToken.selected) {
-      classes.push('visual-selection');
+    const classes = ['token'];
+    if (token.type) {
+      classes.push(token.type);
     }
     
-    return classes;
-  }
-  
-  /**
-   * Get token class name (compatibility method for old system)
-   */
-  getTokenClassName(tokenType) {
-    // Map basic token types to Prism classes
-    const typeMap = {
-      'keyword': 'token keyword',
-      'string': 'token string',
-      'comment': 'token comment',
-      'number': 'token number',
-      'operator': 'token operator',
-      'punctuation': 'token punctuation',
-      'function': 'token function',
-      'variable': 'token variable',
-      'class': 'token class-name',
-      'text': ''
-    };
-    
-    return typeMap[tokenType] || 'token';
-  }
-  
-  /**
-   * Render a single token to HTML
-   */
-  renderToken(vimToken) {
-    const classes = this.getTokenClasses(vimToken);
-    const escapedValue = this.escapeHtml(vimToken.value);
-    
-    // Handle newlines specially
-    if (vimToken.type === 'newline') {
-      if (vimToken.selected) {
-        return '<span class="visual-selection">\n</span>';
+    // Handle aliases
+    if (token.alias) {
+      if (Array.isArray(token.alias)) {
+        classes.push(...token.alias);
+      } else {
+        classes.push(token.alias);
       }
-      return '\n';
     }
     
-    // Handle empty cursor tokens for insert mode
-    if (vimToken.type === 'cursor' && vimToken.value === '') {
-      return '<span class="cursor-insert"></span>';
+    let content = '';
+    if (typeof token.content === 'string') {
+      content = this.escapeHtml(token.content);
+    } else if (Array.isArray(token.content)) {
+      content = token.content.map(item => this.renderPrismTokenAsHTML(item)).join('');
+    } else if (token.content && typeof token.content === 'object') {
+      content = this.renderPrismTokenAsHTML(token.content);
     }
     
-    if (classes.length > 0) {
-      return `<span class="${classes.join(' ')}">${escapedValue}</span>`;
-    }
-    
-    return escapedValue;
+    return `<span class="${classes.join(' ')}">${content}</span>`;
   }
   
   /**
-   * Render all tokens to HTML
+   * Extract content from a Prism token, handling nested structures
+   */
+  extractContent(token) {
+    if (typeof token === 'string') {
+      return token;
+    }
+    
+    if (!token || typeof token !== 'object') {
+      return '';
+    }
+    
+    const content = token.content;
+    
+    if (typeof content === 'string') {
+      return content;
+    }
+    
+    if (Array.isArray(content)) {
+      return content.map(item => this.extractContent(item)).join('');
+    }
+    
+    if (content && typeof content === 'object') {
+      return this.extractContent(content);
+    }
+    
+    return '';
+  }
+  
+  /**
+   * Render tokens to HTML
    */
   render(vimTokens) {
     return vimTokens.map(token => this.renderToken(token)).join('');
   }
   
   /**
-   * Escape HTML characters
+   * Render a single token
+   */
+  renderToken(token) {
+    // Handle newlines
+    if (token.content === '\n') {
+      if (token.selected) {
+        return '<span class="visual-selection">\n</span>';
+      }
+      return '\n';
+    }
+    
+    // Handle empty cursor tokens
+    if (token.type === 'cursor' && token.content === '') {
+      return '<span class="cursor-insert"></span>';
+    }
+    
+    // Use pre-rendered HTML if available (preserves Prism structure)
+    if (token.originalHTML) {
+      let html = token.originalHTML;
+      
+      // Apply Vim-specific classes if needed
+      if (token.cursor || token.selected || token.isLastSelectedChar) {
+        const vimClasses = [];
+        if (token.cursor) vimClasses.push(token.cursor);
+        if (token.isLastSelectedChar) vimClasses.push('visual-block-cursor');
+        else if (token.selected) vimClasses.push('visual-selection');
+        
+        if (vimClasses.length > 0) {
+          // Wrap the entire token with Vim classes
+          html = `<span class="${vimClasses.join(' ')}">${html}</span>`;
+        }
+      }
+      
+      return html;
+    }
+    
+    // Fallback to standard rendering
+    const escapedContent = this.escapeHtml(token.content);
+    
+    // Build CSS classes
+    const classes = [...token.cssClasses];
+    
+    // Handle cursor
+    if (token.cursor) {
+      classes.push(token.cursor);
+    }
+    
+    // Handle selection
+    if (token.isLastSelectedChar) {
+      classes.push('visual-block-cursor');
+    } else if (token.selected) {
+      classes.push('visual-selection');
+    }
+    
+    // Render with classes
+    if (classes.length > 0) {
+      // Remove duplicates
+      const uniqueClasses = [...new Set(classes)];
+      return `<span class="${uniqueClasses.join(' ')}">${escapedContent}</span>`;
+    }
+    
+    return escapedContent;
+  }
+  
+  /**
+   * Escape HTML
    */
   escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
   /**
-   * Apply rainbow bracket classes to punctuation tokens
+   * Apply rainbow bracket classes to tokens
    */
   applyRainbowBrackets(vimTokens) {
     const bracketMap = {
@@ -332,43 +298,44 @@ class PrismVimHighlighter {
     const bracketPairs = {'(': ')', '[': ']', '{': '}'};
     
     const bracketStack = [];
-    let bracketLevel = 0;
+    let level = 0;
     
-    for (let i = 0; i < vimTokens.length; i++) {
-      const token = vimTokens[i];
-      
-      // Check if this is a punctuation token with brackets
-      // BUT exclude JSX/HTML tags (< and > should keep their original colors)
-      if (token.prismClasses && token.prismClasses.includes('punctuation')) {
-        const content = token.value.trim();
-        
-        // Skip JSX/HTML angle brackets - they should keep their original tag colors
-        if (content === '<' || content === '>') {
-          continue;
-        }
-        
-        if (bracketMap[content]) {
-          // Add base bracket class
-          token.prismClasses.push(bracketMap[content]);
+    for (const token of vimTokens) {
+      if (token.originalHTML) {
+        // Apply rainbow brackets to pre-rendered HTML
+        token.originalHTML = this.applyRainbowBracketsToHTML(token.originalHTML, bracketStack, { level });
+      } else {
+        // Apply to simple tokens
+        if (token.cssClasses && token.cssClasses.includes('punctuation')) {
+          const content = token.content.trim();
           
-          if (openBrackets.includes(content)) {
-            // Opening bracket
-            bracketLevel++;
-            token.prismClasses.push(`brace-level-${((bracketLevel - 1) % 12) + 1}`);
-            bracketStack.push({
-              type: content,
-              level: bracketLevel,
-              tokenIndex: i
-            });
-          } else if (closeBrackets.includes(content)) {
-            // Closing bracket
-            if (bracketStack.length > 0) {
-              const lastOpen = bracketStack[bracketStack.length - 1];
-              if (bracketPairs[lastOpen.type] === content) {
-                // Matching pair found
-                token.prismClasses.push(`brace-level-${((lastOpen.level - 1) % 12) + 1}`);
-                bracketStack.pop();
-                bracketLevel = Math.max(0, bracketLevel - 1);
+          // Skip JSX/HTML angle brackets
+          if (content === '<' || content === '>') {
+            continue;
+          }
+          
+          if (bracketMap[content]) {
+            // Add base bracket class
+            token.cssClasses.push(bracketMap[content]);
+            
+            if (openBrackets.includes(content)) {
+              // Opening bracket
+              level++;
+              token.cssClasses.push(`brace-level-${((level - 1) % 12) + 1}`);
+              bracketStack.push({
+                type: content,
+                level: level
+              });
+            } else if (closeBrackets.includes(content)) {
+              // Closing bracket
+              if (bracketStack.length > 0) {
+                const lastOpen = bracketStack[bracketStack.length - 1];
+                if (bracketPairs[lastOpen.type] === content) {
+                  // Matching pair found
+                  token.cssClasses.push(`brace-level-${((lastOpen.level - 1) % 12) + 1}`);
+                  bracketStack.pop();
+                  level = Math.max(0, level - 1);
+                }
               }
             }
           }
@@ -376,25 +343,71 @@ class PrismVimHighlighter {
       }
     }
   }
-
+  
+  /**
+   * Apply rainbow brackets to HTML string
+   */
+  applyRainbowBracketsToHTML(html, bracketStack, levelRef) {
+    const bracketMap = {
+      '(': 'brace-round',
+      ')': 'brace-round',
+      '[': 'brace-square', 
+      ']': 'brace-square',
+      '{': 'brace-curly',
+      '}': 'brace-curly'
+    };
+    
+    const openBrackets = ['(', '[', '{'];
+    const closeBrackets = [')', ']', '}'];
+    const bracketPairs = {'(': ')', '[': ']', '{': '}'};
+    
+    // Use regex to find punctuation spans and add rainbow classes
+    return html.replace(/<span class="([^"]*token[^"]*punctuation[^"]*)"([^>]*)>([()[\]{}])<\/span>/g, (match, classes, attrs, bracket) => {
+      // Skip angle brackets
+      if (bracket === '<' || bracket === '>') {
+        return match;
+      }
+      
+      if (bracketMap[bracket]) {
+        const newClasses = classes + ' ' + bracketMap[bracket];
+        
+        if (openBrackets.includes(bracket)) {
+          levelRef.level++;
+          const levelClass = `brace-level-${((levelRef.level - 1) % 12) + 1}`;
+          bracketStack.push({
+            type: bracket,
+            level: levelRef.level
+          });
+          return `<span class="${newClasses} ${levelClass}"${attrs}>${bracket}</span>`;
+        } else if (closeBrackets.includes(bracket)) {
+          if (bracketStack.length > 0) {
+            const lastOpen = bracketStack[bracketStack.length - 1];
+            if (bracketPairs[lastOpen.type] === bracket) {
+              const levelClass = `brace-level-${((lastOpen.level - 1) % 12) + 1}`;
+              bracketStack.pop();
+              levelRef.level = Math.max(0, levelRef.level - 1);
+              return `<span class="${newClasses} ${levelClass}"${attrs}>${bracket}</span>`;
+            }
+          }
+          return `<span class="${newClasses}"${attrs}>${bracket}</span>`;
+        }
+      }
+      
+      return match;
+    });
+  }
 }
 
 /**
- * Factory for creating Prism-powered highlighters
+ * Factory for creating highlighters
  */
 class PrismVimHighlighterFactory {
-  /**
-   * Create a highlighter for the specified language
-   */
-  static create(language) {
+  static createHighlighter(language) {
     return new PrismVimHighlighter(language);
   }
   
-  /**
-   * Create a highlighter for the specified language (alias for create)
-   */
-  static createHighlighter(language) {
-    return this.create(language);
+  static create(language) {
+    return new PrismVimHighlighter(language);
   }
   
   /**
@@ -405,7 +418,6 @@ class PrismVimHighlighterFactory {
       return ['javascript', 'typescript', 'python', 'css', 'html', 'java', 'swift'];
     }
     
-    // Return languages available in Prism
     return Object.keys(Prism.languages).filter(lang => 
       lang !== 'extend' && 
       lang !== 'insertBefore' && 
@@ -414,63 +426,17 @@ class PrismVimHighlighterFactory {
     );
   }
   
-  /**
-   * Check if Prism.js is loaded and ready
-   */
   static isPrismAvailable() {
     return typeof Prism !== 'undefined' && Prism.languages;
   }
-  
-  /**
-   * Load Prism.js dynamically if not available
-   */
-  static async loadPrism(components = []) {
-    if (this.isPrismAvailable()) {
-      return true;
-    }
-    
-    return new Promise((resolve, reject) => {
-      // Load core Prism from local file
-      const coreScript = document.createElement('script');
-      coreScript.src = './vendor/prism/prism-core.js';  // Local file
-      coreScript.onload = () => {
-        // Load additional components if specified
-        if (components.length > 0) {
-          this.loadPrismComponents(components).then(resolve).catch(reject);
-        } else {
-          resolve(true);
-        }
-      };
-      coreScript.onerror = () => reject(new Error('Failed to load local Prism.js'));
-      document.head.appendChild(coreScript);
-    });
-  }
-  
-  /**
-   * Load specific Prism components from local files
-   */
-  static async loadPrismComponents(components) {
-    const promises = components.map(component => {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = `./vendor/prism/components/prism-${component}.js`;  // Local file
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error(`Failed to load local prism-${component}.js`));
-        document.head.appendChild(script);
-      });
-    });
-    
-    return Promise.all(promises);
-  }
 }
 
-// Export for ES module usage
-export {
-  PrismVimHighlighter,
-  PrismVimHighlighterFactory, VimToken
-};
+// Export for ES modules
+export { PrismVimHighlighter, PrismVimHighlighterFactory, VimToken };
 
-// Make VimToken globally available for compatibility
+// Make available globally for compatibility
 if (typeof window !== 'undefined') {
   window.VimToken = VimToken;
+  window.PrismVimHighlighter = PrismVimHighlighter;
+  window.PrismVimHighlighterFactory = PrismVimHighlighterFactory;
 }
