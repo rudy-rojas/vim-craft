@@ -420,6 +420,75 @@ textarea.form-control {
 }
 
 /* ========================================
+   CSS SPECIFIC TOKENS
+   ======================================== */
+
+/* CSS Properties */
+.token.property {
+  color: #6196cc;
+}
+
+/* CSS Values */
+.token.value {
+  color: #7ec699;
+}
+
+/* CSS At-rules (@media, @import, etc.) */
+.token.atrule {
+  color: #cc99cd;
+  font-weight: bold;
+}
+
+/* CSS Selectors */
+.token.selector {
+  color: #f8c555;
+}
+
+/* CSS Units and Important */
+.token.important {
+  color: #e2777a;
+  font-weight: bold;
+}
+
+/* ========================================
+   HTML SPECIFIC TOKENS
+   ======================================== */
+
+/* HTML Tags */
+.token.tag .token.tag {
+  color: #e2777a;
+}
+
+.token.tag .token.punctuation {
+  color: #e2777a;
+}
+
+/* HTML Attributes */
+.token.attr-name {
+  color: #f8c555;
+}
+
+/* HTML Attribute Values */
+.token.attr-value {
+  color: #7ec699;
+}
+
+.token.attr-value .token.punctuation {
+  color: #7ec699;
+}
+
+/* HTML Entities */
+.token.entity {
+  color: #67cdcc;
+}
+
+/* HTML Doctype */
+.token.doctype {
+  color: #999;
+  font-style: italic;
+}
+
+/* ========================================
    VISUAL SELECTION WITH TOMORROW THEME COLORS PRESERVED
    ======================================== */
 
@@ -507,6 +576,12 @@ textarea.form-control {
   background: rgba(103, 205, 204, 0.25) !important;
 }
 
+/* Additional CSS-specific tokens for visual selection */
+.visual-selection.token.value {
+  color: #7ec699 !important;
+  background: rgba(126, 198, 153, 0.25) !important;
+}
+
 /* ========================================
    VISUAL BLOCK CURSOR WITH TOMORROW THEME COLORS
    ======================================== */
@@ -583,5 +658,11 @@ textarea.form-control {
 .visual-block-cursor.token.entity,
 .visual-block-cursor.token.url {
   background-color: #67cdcc !important;
+  color: #2d2d2d !important;
+}
+
+/* Additional CSS-specific tokens for visual block cursor */
+.visual-block-cursor.token.value {
+  background-color: #7ec699 !important;
   color: #2d2d2d !important;
 }
