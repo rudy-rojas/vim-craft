@@ -51,15 +51,26 @@ class VimToken {
       prismToken
     );
     
-    // Extract CSS classes from Prism token
+    // Extract CSS classes from Prism token with better handling
     if (prismToken.type) {
       token.prismClasses = ['token', prismToken.type];
+      
+      // Handle aliases (important for CSS and HTML tokens)
       if (prismToken.alias) {
         if (Array.isArray(prismToken.alias)) {
           token.prismClasses.push(...prismToken.alias);
         } else {
           token.prismClasses.push(prismToken.alias);
         }
+      }
+      
+      // Special handling for specific token types
+      if (prismToken.type === 'tag' && prismToken.content) {
+        // For HTML tags, preserve the tag structure
+        token.prismClasses.push('tag');
+      } else if (prismToken.type === 'property' || prismToken.type === 'selector') {
+        // For CSS properties and selectors
+        token.prismClasses.push(prismToken.type);
       }
     }
     
@@ -85,10 +96,23 @@ class PrismVimHighlighter {
       this.useFallback = true;
     } else {
       this.useFallback = false;
+      console.log('Prism.js is available');
+      console.log('Available languages:', Object.keys(Prism.languages));
+      
       // Ensure the language is loaded
       if (!Prism.languages[this.language]) {
-        console.warn(`Language ${this.language} not loaded in Prism. Using 'markup' as fallback.`);
-        this.language = 'markup';
+        console.warn(`Language ${this.language} not loaded in Prism. Available languages:`, Object.keys(Prism.languages));
+        
+        // Try common fallbacks for HTML
+        if (this.language === 'html' && Prism.languages.markup) {
+          console.log('Using markup as fallback for HTML');
+          this.language = 'markup';
+        } else {
+          console.warn(`No fallback available for ${this.language}. Using basic highlighting.`);
+          this.useFallback = true;
+        }
+      } else {
+        console.log(`Language ${this.language} is available in Prism`);
       }
     }
   }
@@ -102,11 +126,15 @@ class PrismVimHighlighter {
     }
     
     try {
+      console.log(`Tokenizing ${this.language} code:`, code.substring(0, 100) + '...');
+      
       // Use Prism to tokenize
       const prismTokens = Prism.tokenize(code, Prism.languages[this.language]);
+      console.log('Prism tokens:', prismTokens);
       
       // Convert to VimTokens with position tracking
       const vimTokens = this.convertPrismTokensToVim(prismTokens, code);
+      console.log('Converted VimTokens:', vimTokens);
       
       // Apply rainbow bracket classes
       this.applyRainbowBrackets(vimTokens);
@@ -142,10 +170,32 @@ class PrismVimHighlighter {
           vimTokens.push(vimToken);
           return startPos + content.length;
         } else if (Array.isArray(content)) {
-          // Nested tokens
+          // Nested tokens - process each one but preserve the parent token type
           let nestedPos = startPos;
+          
+          // For tokens like CSS selectors, properties, HTML tags with complex structure
+          // we want to preserve the parent token's type for styling
           for (const nestedToken of content) {
-            nestedPos = processToken(nestedToken, nestedPos);
+            if (typeof nestedToken === 'string') {
+              // Create a token that inherits the parent's type
+              const inheritedToken = new VimToken(token.type, nestedToken, nestedPos, nestedPos + nestedToken.length);
+              inheritedToken.prismClasses = ['token', token.type];
+              
+              // Add aliases if present
+              if (token.alias) {
+                if (Array.isArray(token.alias)) {
+                  inheritedToken.prismClasses.push(...token.alias);
+                } else {
+                  inheritedToken.prismClasses.push(token.alias);
+                }
+              }
+              
+              vimTokens.push(inheritedToken);
+              nestedPos += nestedToken.length;
+            } else if (nestedToken && typeof nestedToken === 'object') {
+              // Process nested token object
+              nestedPos = processToken(nestedToken, nestedPos);
+            }
           }
           return nestedPos;
         }
@@ -164,6 +214,7 @@ class PrismVimHighlighter {
       vimTokens.push(new VimToken('text', remaining, position, originalCode.length));
     }
     
+    console.log('Final VimTokens:', vimTokens);
     return vimTokens;
   }
   
@@ -263,7 +314,6 @@ class PrismVimHighlighter {
     div.textContent = text;
     return div.innerHTML;
   }
-  
   /**
    * Apply rainbow bracket classes to punctuation tokens
    */
@@ -326,6 +376,7 @@ class PrismVimHighlighter {
       }
     }
   }
+
 }
 
 /**
@@ -415,8 +466,8 @@ class PrismVimHighlighterFactory {
 
 // Export for ES module usage
 export {
-    PrismVimHighlighter,
-    PrismVimHighlighterFactory, VimToken
+  PrismVimHighlighter,
+  PrismVimHighlighterFactory, VimToken
 };
 
 // Make VimToken globally available for compatibility
