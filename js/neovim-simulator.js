@@ -44,7 +44,48 @@ class VisualEffectsProcessor {
       }
     }
     
+    // CRITICAL: Preserve originalHTML when splitting tokens
+    // For split tokens, we need to generate their own originalHTML based on content
+    if (originalToken && originalToken.originalHTML && content) {
+      // If this is a partial token (split from original), generate appropriate originalHTML
+      if (content === (originalToken.content || originalToken.value)) {
+        // Full content match - use original HTML
+        newToken.originalHTML = originalToken.originalHTML;
+      } else {
+        // Partial content - generate new HTML structure preserving Prism classes
+        newToken.originalHTML = this.generatePartialHTML(content, originalToken);
+      }
+    } else if (originalToken && !originalToken.originalHTML) {
+      // If original token doesn't have originalHTML, generate it
+      newToken.originalHTML = this.generatePartialHTML(content, originalToken);
+    }
+    
     return newToken;
+  }
+
+  /**
+   * Generate HTML for partial tokens that preserve Prism.js structure
+   */
+  generatePartialHTML(content, originalToken) {
+    // Escape the content for HTML (use a simple escape function)
+    const escapedContent = content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    
+    // Get the CSS classes from the original token
+    const cssClasses = originalToken.cssClasses || originalToken.prismClasses || [];
+    
+    // If we have a valid token type that's not just 'text', create the appropriate structure
+    if (originalToken.type && originalToken.type !== 'text' && cssClasses.length > 0) {
+      // Reconstruct the HTML with the same classes as the original
+      return `<span class="${cssClasses.join(' ')}">${escapedContent}</span>`;
+    }
+    
+    // For plain text tokens or tokens without classes, return plain text
+    return escapedContent;
   }
 
   process(tokens, mode, selectionStart, selectionEnd) {
@@ -273,7 +314,6 @@ class TokenRenderer {
 
   renderToken(token) {
     const escapedValue = this.escapeHtml(token.content || token.value);
-    const classes = this.getTokenClasses(token);
     
     // Handle newlines specially
     if (token.type === 'newline') {
@@ -288,10 +328,47 @@ class TokenRenderer {
       return '<span class="cursor-insert"></span>';
     }
     
+    // NEW APPROACH: Preserve original Prism.js HTML structure and add Vim effects as wrapper layers
+    if (token.originalHTML) {
+      return this.wrapWithVimEffects(token.originalHTML, token);
+    }
+    
+    // Fallback for tokens without originalHTML (backwards compatibility)
+    const classes = this.getTokenClasses(token);
     if (classes.length > 0) {
       return `<span class="${classes.join(' ')}">${escapedValue}</span>`;
     }
     return escapedValue;
+  }
+
+  /**
+   * Wrap Prism.js original HTML with Vim visual effects without destroying the structure
+   */
+  wrapWithVimEffects(originalHTML, token) {
+    // Get Vim-specific classes that need to be applied
+    const vimClasses = [];
+    
+    // Add cursor class
+    if (token.cursor) {
+      vimClasses.push(token.cursor);
+    }
+    
+    // Add visual block cursor class for last selected character
+    if (token.isLastSelectedChar) {
+      vimClasses.push('visual-block-cursor');
+    }
+    // Add selection class (but not if it's the last selected char, to avoid conflict)
+    else if (token.selected) {
+      vimClasses.push('visual-selection');
+    }
+    
+    // If no Vim effects need to be applied, return original HTML
+    if (vimClasses.length === 0) {
+      return originalHTML;
+    }
+    
+    // Wrap the original HTML with Vim effect classes
+    return `<span class="${vimClasses.join(' ')}">${originalHTML}</span>`;
   }
 
   getTokenClasses(token) {
@@ -406,6 +483,7 @@ class NeovimModeSimulator {
 export {
   NeovimModeSimulator as NeovimSimulator // Export with alias for convenience
   ,
+
 
 
 
