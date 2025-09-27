@@ -73,7 +73,7 @@ class VisualEffectsProcessor {
       const token = result[i];
 
       // Handle cursor within a token (primary case)
-      if (token.start <= position && position < token.end) {
+      if (token.start <= position && position <= token.end) {
         // Prioritize complex tokens - they handle nested structures
         if (token.isComplex) {
           // True ComplexVimToken with nested structure
@@ -98,7 +98,7 @@ class VisualEffectsProcessor {
         const token = result[i];
 
         // Handle cursor within a token (only simple tokens now)
-        if (token.start <= position && position < token.end && !token.isComplex) {
+        if (token.start <= position && position <= token.end && !token.isComplex) {
           if (typeof token.canBeSplit === 'function' && !token.canBeSplit()) {
             // Simple token that shouldn't be split (like property, selector)
             // BUT for cursor positioning, we ALWAYS want character-level precision
@@ -130,9 +130,35 @@ class VisualEffectsProcessor {
           const insertCursor = this.createToken('cursor', '', position, position);
           insertCursor.cursor = cursorClass;
           result.splice(i + 1, 0, insertCursor);
+          cursorPlaced = true;
           break;
         }
       }
+    }
+
+    // Fallback for Insert mode: handle positions not covered by any token
+    // This covers gaps in tokenization (like newlines, spaces between tokens, etc.)
+    if (!cursorPlaced && cursorClass === 'cursor-insert') {
+      // Find where to insert the cursor based on position
+      let insertPosition = result.length; // Default to end
+
+      for (let i = 0; i < result.length; i++) {
+        const token = result[i];
+        if (position < token.start) {
+          insertPosition = i;
+          break;
+        }
+        // Also check if position is exactly at token.end - insert after this token
+        else if (position === token.end) {
+          insertPosition = i + 1;
+          break;
+        }
+      }
+
+      // Create cursor at the specific position
+      const insertCursor = this.createToken('cursor', '', position, position);
+      insertCursor.cursor = cursorClass;
+      result.splice(insertPosition, 0, insertCursor);
     }
 
     return result;

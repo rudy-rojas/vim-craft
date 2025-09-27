@@ -214,7 +214,7 @@ class ComplexVimToken extends VimToken {
     const tokenEnd = this.end;
 
     // Check if cursor is within this token
-    if (cursorPosition >= tokenStart && cursorPosition < tokenEnd) {
+    if (cursorPosition >= tokenStart && cursorPosition <= tokenEnd) {
       // Apply character-level cursor within nested structure
       return this.renderWithPartialCursor(cursorPosition, cursorClass);
     }
@@ -250,6 +250,7 @@ class ComplexVimToken extends VimToken {
    */
   applySimplePartialCursor(cursorPosition, cursorClass) {
     const tokenStart = this.start;
+    const tokenEnd = this.end;
     const value = this.value;
     let result = '';
 
@@ -263,6 +264,11 @@ class ComplexVimToken extends VimToken {
       } else {
         result += escapedChar;
       }
+    }
+
+    // Handle cursor at the exact end of the token (Insert mode)
+    if (cursorPosition === tokenEnd) {
+      result += `<span class="${cursorClass}"></span>`;
     }
 
     // Wrap in original token classes
@@ -324,6 +330,12 @@ class ComplexVimToken extends VimToken {
         }
       }
 
+      // Handle cursor at the exact end of the string (Insert mode)
+      const stringEnd = currentPos + structure.length;
+      if (cursorPosition === stringEnd) {
+        result += `<span class="${cursorClass}"></span>`;
+      }
+
       return result;
     }
 
@@ -353,6 +365,13 @@ class ComplexVimToken extends VimToken {
           // Update position based on the actual content length (recursive calculation)
           pos += this.calculateContentLength(item);
         }
+      }
+
+      // Handle cursor at the exact end of this token structure (Insert mode)
+      const tokenLength = this.calculateContentLength(structure);
+      const tokenEnd = currentPos + tokenLength;
+      if (cursorPosition === tokenEnd) {
+        content += `<span class="${cursorClass}"></span>`;
       }
 
       return `<span class="${classes.join(' ')}">${content}</span>`;
