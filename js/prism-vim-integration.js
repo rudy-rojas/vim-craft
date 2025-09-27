@@ -43,38 +43,413 @@ class VimToken {
    * Create VimToken from Prism token
    */
   static fromPrismToken(prismToken, start, end) {
+    // Handle edge cases where prismToken might be a string or invalid object
+    if (typeof prismToken === 'string') {
+      return new VimToken('text', prismToken, start, end);
+    }
+
+    if (!prismToken || typeof prismToken !== 'object') {
+      console.warn('Invalid prismToken passed to fromPrismToken:', prismToken);
+      return new VimToken('text', '', start, end);
+    }
+
+    const content = typeof prismToken.content === 'string' ? prismToken.content : '';
     const token = new VimToken(
       prismToken.type || 'text',
-      prismToken.content || prismToken,
+      content,
       start,
       end,
       prismToken
     );
-    
+
     // Extract CSS classes from Prism token with better handling
     if (prismToken.type) {
-      token.prismClasses = ['token', prismToken.type];
-      
+      // Use a Set to avoid duplicates
+      const classesSet = new Set(['token', prismToken.type]);
+
       // Handle aliases (important for CSS and HTML tokens)
       if (prismToken.alias) {
         if (Array.isArray(prismToken.alias)) {
-          token.prismClasses.push(...prismToken.alias);
+          prismToken.alias.forEach(alias => classesSet.add(alias));
         } else {
-          token.prismClasses.push(prismToken.alias);
+          classesSet.add(prismToken.alias);
         }
       }
-      
-      // Special handling for specific token types
-      if (prismToken.type === 'tag' && prismToken.content) {
-        // For HTML tags, preserve the tag structure
-        token.prismClasses.push('tag');
-      } else if (prismToken.type === 'property' || prismToken.type === 'selector') {
-        // For CSS properties and selectors
-        token.prismClasses.push(prismToken.type);
+
+      // Convert Set back to array
+      token.prismClasses = Array.from(classesSet);
+    }
+
+    return token;
+  }
+}
+
+/**
+ * Complex VimToken for handling nested token structures
+ * This preserves the original Prism token structure while adding Vim capabilities
+ */
+class ComplexVimToken extends VimToken {
+  constructor(type, value, start, end, prismToken = null, nestedStructure = null) {
+    super(type, value, start, end, prismToken);
+
+    // Store the nested structure for accurate rendering
+    this.nestedStructure = nestedStructure;
+    this.isComplex = true;
+  }
+
+  /**
+   * Render the complex token with its nested structure
+   */
+  renderNested() {
+    if (!this.nestedStructure) {
+      return this.value;
+    }
+
+    return this.renderTokenStructure(this.nestedStructure);
+  }
+
+  /**
+   * Recursively render token structure
+   */
+  renderTokenStructure(structure) {
+    if (typeof structure === 'string') {
+      return this.escapeHtml(structure);
+    }
+
+    if (structure && typeof structure === 'object') {
+      const classes = ['token'];
+      if (structure.type) {
+        classes.push(structure.type);
+      }
+      if (structure.alias) {
+        if (Array.isArray(structure.alias)) {
+          classes.push(...structure.alias);
+        } else {
+          classes.push(structure.alias);
+        }
+      }
+
+      let content = '';
+      if (typeof structure.content === 'string') {
+        content = this.escapeHtml(structure.content);
+      } else if (Array.isArray(structure.content)) {
+        content = structure.content.map(item => this.renderTokenStructure(item)).join('');
+      }
+
+      return `<span class="${classes.join(' ')}">${content}</span>`;
+    }
+
+    return '';
+  }
+
+  /**
+   * Escape HTML characters
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
+   * Apply Vim effects (selection, cursor) to the complex token
+   * For complex tokens, we need to handle them more carefully
+   */
+  applyVimEffects() {
+    // For complex tokens, we want to preserve the PrismJS structure
+    // but still apply Vim effects appropriately
+    let result = this.renderNested();
+
+    // Apply Vim-specific styling - but only if this token is affected
+    if (this.selected || this.cursor || this.isLastSelectedChar) {
+      // For complex tokens with Vim effects, we wrap the entire structure
+      const vimClasses = [];
+
+      if (this.isLastSelectedChar) {
+        vimClasses.push('visual-block-cursor');
+      } else if (this.selected) {
+        vimClasses.push('visual-selection');
+      }
+
+      if (this.cursor) {
+        vimClasses.push(this.cursor);
+      }
+
+      if (vimClasses.length > 0) {
+        result = `<span class="${vimClasses.join(' ')}">${result}</span>`;
       }
     }
-    
-    return token;
+
+    return result;
+  }
+
+  /**
+   * Enhanced rendering that can handle partial selection for complex tokens
+   */
+  applyVimEffectsWithPartialSelection(selectionStart, selectionEnd, lastSelectedPosition) {
+    // For complex tokens with partial selection, ALWAYS use character-level precision
+    // regardless of whether the selection covers the entire token or not
+    const tokenStart = this.start;
+    const tokenEnd = this.end;
+
+    // Check if selection is within this token
+    if (selectionStart < tokenEnd && selectionEnd > tokenStart) {
+      const overlapStart = Math.max(tokenStart, selectionStart);
+      const overlapEnd = Math.min(tokenEnd, selectionEnd);
+
+      // ALWAYS use character-level selection for partial selection mode
+      // This ensures consistent behavior and prevents whole-token highlighting
+      return this.renderWithPartialSelection(overlapStart, overlapEnd, lastSelectedPosition);
+    }
+
+    // No selection effects
+    return this.renderNested();
+  }
+
+  /**
+   * Apply cursor effects to complex tokens with character-level precision
+   */
+  applyCursorWithPosition(cursorPosition, cursorClass) {
+    const tokenStart = this.start;
+    const tokenEnd = this.end;
+
+    // Check if cursor is within this token
+    if (cursorPosition >= tokenStart && cursorPosition < tokenEnd) {
+      // Apply character-level cursor within nested structure
+      return this.renderWithPartialCursor(cursorPosition, cursorClass);
+    }
+
+    // No cursor effects
+    return this.renderNested();
+  }
+
+  /**
+   * Render with partial cursor applied to specific character within the nested structure
+   */
+  renderWithPartialCursor(cursorPosition, cursorClass) {
+    if (!this.nestedStructure) {
+      return this.applySimplePartialCursor(cursorPosition, cursorClass);
+    }
+
+    return this.renderTokenStructureWithCursor(this.nestedStructure, cursorPosition, cursorClass);
+  }
+
+  /**
+   * Render with partial selection applied to specific characters within the nested structure
+   */
+  renderWithPartialSelection(selectionStart, selectionEnd, lastSelectedPosition) {
+    if (!this.nestedStructure) {
+      return this.applySimplePartialSelection(selectionStart, selectionEnd, lastSelectedPosition);
+    }
+
+    return this.renderTokenStructureWithSelection(this.nestedStructure, selectionStart, selectionEnd, lastSelectedPosition);
+  }
+
+  /**
+   * Apply simple partial cursor for tokens without nested structure
+   */
+  applySimplePartialCursor(cursorPosition, cursorClass) {
+    const tokenStart = this.start;
+    const value = this.value;
+    let result = '';
+
+    for (let i = 0; i < value.length; i++) {
+      const charPos = tokenStart + i;
+      const char = value[i];
+      const escapedChar = this.escapeHtml(char);
+
+      if (charPos === cursorPosition) {
+        result += `<span class="${cursorClass}">${escapedChar}</span>`;
+      } else {
+        result += escapedChar;
+      }
+    }
+
+    // Wrap in original token classes
+    if (this.prismClasses && this.prismClasses.length > 0) {
+      result = `<span class="${this.prismClasses.join(' ')}">${result}</span>`;
+    }
+
+    return result;
+  }
+
+  /**
+   * Apply simple partial selection for tokens without nested structure
+   */
+  applySimplePartialSelection(selectionStart, selectionEnd, lastSelectedPosition) {
+    const tokenStart = this.start;
+    const value = this.value;
+    let result = '';
+
+    for (let i = 0; i < value.length; i++) {
+      const charPos = tokenStart + i;
+      const char = value[i];
+      const escapedChar = this.escapeHtml(char);
+
+      if (charPos >= selectionStart && charPos < selectionEnd) {
+        if (charPos === lastSelectedPosition) {
+          result += `<span class="visual-block-cursor">${escapedChar}</span>`;
+        } else {
+          result += `<span class="visual-selection">${escapedChar}</span>`;
+        }
+      } else {
+        result += escapedChar;
+      }
+    }
+
+    // Wrap in original token classes
+    if (this.prismClasses && this.prismClasses.length > 0) {
+      result = `<span class="${this.prismClasses.join(' ')}">${result}</span>`;
+    }
+
+    return result;
+  }
+
+  /**
+   * Recursively render token structure with character-level cursor
+   */
+  renderTokenStructureWithCursor(structure, cursorPosition, cursorClass, currentPos = this.start) {
+    if (typeof structure === 'string') {
+      let result = '';
+
+      for (let i = 0; i < structure.length; i++) {
+        const charPos = currentPos + i;
+        const char = structure[i];
+        const escapedChar = this.escapeHtml(char);
+
+        if (charPos === cursorPosition) {
+          result += `<span class="${cursorClass}">${escapedChar}</span>`;
+        } else {
+          result += escapedChar;
+        }
+      }
+
+      return result;
+    }
+
+    if (structure && typeof structure === 'object') {
+      const classes = ['token'];
+      if (structure.type) {
+        classes.push(structure.type);
+      }
+      if (structure.alias) {
+        if (Array.isArray(structure.alias)) {
+          classes.push(...structure.alias);
+        } else {
+          classes.push(structure.alias);
+        }
+      }
+
+      let content = '';
+      let pos = currentPos;
+
+      if (typeof structure.content === 'string') {
+        content = this.renderTokenStructureWithCursor(structure.content, cursorPosition, cursorClass, pos);
+      } else if (Array.isArray(structure.content)) {
+        for (const item of structure.content) {
+          const itemContent = this.renderTokenStructureWithCursor(item, cursorPosition, cursorClass, pos);
+          content += itemContent;
+
+          // Update position based on the actual content length (recursive calculation)
+          pos += this.calculateContentLength(item);
+        }
+      }
+
+      return `<span class="${classes.join(' ')}">${content}</span>`;
+    }
+
+    return '';
+  }
+
+  /**
+   * Recursively render token structure with character-level selection
+   */
+  renderTokenStructureWithSelection(structure, selectionStart, selectionEnd, lastSelectedPosition, currentPos = this.start) {
+    if (typeof structure === 'string') {
+      let result = '';
+
+      for (let i = 0; i < structure.length; i++) {
+        const charPos = currentPos + i;
+        const char = structure[i];
+        const escapedChar = this.escapeHtml(char);
+
+        if (charPos >= selectionStart && charPos < selectionEnd) {
+          if (charPos === lastSelectedPosition) {
+            result += `<span class="visual-block-cursor">${escapedChar}</span>`;
+          } else {
+            result += `<span class="visual-selection">${escapedChar}</span>`;
+          }
+        } else {
+          result += escapedChar;
+        }
+      }
+
+      return result;
+    }
+
+    if (structure && typeof structure === 'object') {
+      const classes = ['token'];
+      if (structure.type) {
+        classes.push(structure.type);
+      }
+      if (structure.alias) {
+        if (Array.isArray(structure.alias)) {
+          classes.push(...structure.alias);
+        } else {
+          classes.push(structure.alias);
+        }
+      }
+
+      let content = '';
+      let pos = currentPos;
+
+      if (typeof structure.content === 'string') {
+        content = this.renderTokenStructureWithSelection(structure.content, selectionStart, selectionEnd, lastSelectedPosition, pos);
+      } else if (Array.isArray(structure.content)) {
+        for (const item of structure.content) {
+          const itemContent = this.renderTokenStructureWithSelection(item, selectionStart, selectionEnd, lastSelectedPosition, pos);
+          content += itemContent;
+
+          // Update position based on the actual content length (recursive calculation)
+          pos += this.calculateContentLength(item);
+        }
+      }
+
+      return `<span class="${classes.join(' ')}">${content}</span>`;
+    }
+
+    return '';
+  }
+
+  /**
+   * Calculate the total character length of any nested structure
+   */
+  calculateContentLength(item) {
+    if (typeof item === 'string') {
+      return item.length;
+    }
+
+    if (item && typeof item === 'object') {
+      if (typeof item.content === 'string') {
+        return item.content.length;
+      } else if (Array.isArray(item.content)) {
+        let totalLength = 0;
+        for (const subItem of item.content) {
+          totalLength += this.calculateContentLength(subItem);
+        }
+        return totalLength;
+      }
+    }
+
+    return 0;
+  }
+
+  /**
+   * Check if this token can be split for Vim effects
+   * Complex tokens generally should not be split to preserve syntax highlighting
+   */
+  canBeSplit() {
+    return false; // Complex tokens preserve their structure
   }
 }
 
@@ -145,74 +520,168 @@ class PrismVimHighlighter {
   
   /**
    * Convert Prism tokens to VimTokens with accurate position tracking
+   * Now preserves nested structure for complex tokens
    */
   convertPrismTokensToVim(prismTokens, originalCode) {
     const vimTokens = [];
     let position = 0;
-    
+
     const processToken = (token, currentPos) => {
       if (typeof token === 'string') {
         // Simple string token
-        const vimToken = new VimToken('text', token, currentPos, currentPos + token.length);
-        vimTokens.push(vimToken);
-        return currentPos + token.length;
+        if (token.length > 0) {
+          // Special handling for newlines
+          if (token === '\n') {
+            const vimToken = new VimToken('newline', token, currentPos, currentPos + token.length);
+            vimTokens.push(vimToken);
+          } else {
+            const vimToken = new VimToken('text', token, currentPos, currentPos + token.length);
+            vimTokens.push(vimToken);
+          }
+          return currentPos + token.length;
+        }
+        return currentPos;
       } else if (token && typeof token === 'object') {
-        // Prism Token object
-        const content = token.content;
         const startPos = currentPos;
-        
-        if (typeof content === 'string') {
-          // Simple token with string content
-          const vimToken = VimToken.fromPrismToken(token, startPos, startPos + content.length);
-          vimTokens.push(vimToken);
-          return startPos + content.length;
-        } else if (Array.isArray(content)) {
-          // Nested tokens - process each one but preserve the parent token type
-          let nestedPos = startPos;
-          
-          // For tokens like CSS selectors, properties, HTML tags with complex structure
-          // we want to preserve the parent token's type for styling
-          for (const nestedToken of content) {
-            if (typeof nestedToken === 'string') {
-              // Create a token that inherits the parent's type
-              const inheritedToken = new VimToken(token.type, nestedToken, nestedPos, nestedPos + nestedToken.length);
-              inheritedToken.prismClasses = ['token', token.type];
-              
-              // Add aliases if present
+        const tokenText = this.extractTokenText(token);
+
+        // Handle undefined or null content
+        if (!tokenText) {
+          console.warn('Token with no extractable text:', token);
+          return currentPos;
+        }
+
+        const endPos = startPos + tokenText.length;
+
+        // Check if this is a complex token that should preserve structure
+        if (this.shouldPreserveStructure(token)) {
+          // For tokens with nested structure, use ComplexVimToken
+          if (Array.isArray(token.content)) {
+            const complexToken = new ComplexVimToken(
+              token.type || 'text',
+              tokenText,
+              startPos,
+              endPos,
+              token,
+              token // Pass the entire token as nested structure
+            );
+
+            // Set basic Prism classes
+            if (token.type) {
+              complexToken.prismClasses = ['token', token.type];
               if (token.alias) {
                 if (Array.isArray(token.alias)) {
-                  inheritedToken.prismClasses.push(...token.alias);
+                  complexToken.prismClasses.push(...token.alias);
                 } else {
-                  inheritedToken.prismClasses.push(token.alias);
+                  complexToken.prismClasses.push(token.alias);
                 }
               }
-              
-              vimTokens.push(inheritedToken);
-              nestedPos += nestedToken.length;
-            } else if (nestedToken && typeof nestedToken === 'object') {
-              // Process nested token object
-              nestedPos = processToken(nestedToken, nestedPos);
             }
+
+            vimTokens.push(complexToken);
+            return endPos;
+          } else {
+            // Simple token that should be preserved but has string content
+            // Use VimToken but mark it as non-splittable
+            const vimToken = VimToken.fromPrismToken(token, startPos, endPos);
+            vimToken.canBeSplit = () => false; // Mark as non-splittable
+            vimTokens.push(vimToken);
+            return endPos;
           }
-          return nestedPos;
+        } else {
+          // Normal token - use the original logic
+          const vimToken = VimToken.fromPrismToken(token, startPos, endPos);
+          vimTokens.push(vimToken);
+          return endPos;
         }
       }
       return currentPos;
     };
-    
+
     // Process all tokens
     for (const token of prismTokens) {
-      position = processToken(token, position);
+      try {
+        position = processToken(token, position);
+      } catch (error) {
+        console.error('Error processing token:', token, error);
+        // Try to recover by treating as string if possible
+        if (typeof token === 'string' && token.length > 0) {
+          const vimToken = new VimToken('text', token, position, position + token.length);
+          vimTokens.push(vimToken);
+          position += token.length;
+        }
+      }
     }
-    
-    // Handle any remaining text (shouldn't happen with proper tokenization)
+
+    // Handle any remaining text
     if (position < originalCode.length) {
       const remaining = originalCode.substring(position);
-      vimTokens.push(new VimToken('text', remaining, position, originalCode.length));
+      if (remaining.length > 0) {
+        vimTokens.push(new VimToken('text', remaining, position, originalCode.length));
+      }
     }
-    
+
     console.log('Final VimTokens:', vimTokens);
     return vimTokens;
+  }
+
+  /**
+   * Extract the complete text content from a token (including nested content)
+   */
+  extractTokenText(token) {
+    if (typeof token === 'string') {
+      return token;
+    }
+
+    if (token && typeof token === 'object') {
+      const content = token.content;
+
+      if (typeof content === 'string') {
+        return content;
+      } else if (Array.isArray(content)) {
+        return content.map(item => this.extractTokenText(item)).join('');
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Determine if a token should preserve its nested structure
+   */
+  shouldPreserveStructure(token) {
+    if (!token || typeof token !== 'object' || !token.type) {
+      return false;
+    }
+
+    // These token types should ALWAYS be preserved to maintain proper syntax highlighting
+    const alwaysPreserveTypes = [
+      'atrule',      // @import, @media, etc.
+      'url',         // url() functions
+      'tag',         // HTML tags
+      'function',    // CSS functions like rgba(), calc(), etc.
+      'selector',    // CSS selectors
+      'property',    // CSS properties
+      'string',      // String literals
+      'comment',     // Comments
+      'number',      // Numbers
+      'important',   // !important
+      'keyword',     // Keywords
+      'punctuation', // Punctuation marks like {, }, :, ;
+      'operator',    // Operators
+      'variable',    // Variables
+      'class-name',  // Class names
+      'boolean',     // Boolean values
+      'rule'         // CSS rules like @import, @media, etc.
+    ];
+
+    // Always preserve these types regardless of content structure
+    if (alwaysPreserveTypes.includes(token.type)) {
+      return true;
+    }
+
+    // For other types, only preserve if they have complex nested structure
+    return Array.isArray(token.content);
   }
   
   /**
@@ -273,9 +742,23 @@ class PrismVimHighlighter {
    * Render a single token to HTML
    */
   renderToken(vimToken) {
+    // Handle ComplexVimToken with nested structure
+    if (vimToken.isComplex && vimToken instanceof ComplexVimToken) {
+      // Check if this token has partial selection
+      if (vimToken.hasPartialSelection && typeof vimToken.applyVimEffectsWithPartialSelection === 'function') {
+        return vimToken.applyVimEffectsWithPartialSelection(
+          vimToken.partialSelectionStart,
+          vimToken.partialSelectionEnd,
+          vimToken.partialLastSelectedPosition
+        );
+      } else {
+        return vimToken.applyVimEffects();
+      }
+    }
+
     const classes = this.getTokenClasses(vimToken);
     const escapedValue = this.escapeHtml(vimToken.value);
-    
+
     // Handle newlines specially
     if (vimToken.type === 'newline') {
       if (vimToken.selected) {
@@ -283,16 +766,16 @@ class PrismVimHighlighter {
       }
       return '\n';
     }
-    
+
     // Handle empty cursor tokens for insert mode
     if (vimToken.type === 'cursor' && vimToken.value === '') {
       return '<span class="cursor-insert"></span>';
     }
-    
+
     if (classes.length > 0) {
       return `<span class="${classes.join(' ')}">${escapedValue}</span>`;
     }
-    
+
     return escapedValue;
   }
   
@@ -401,10 +884,13 @@ class PrismVimHighlighterFactory {
 // Export for ES module usage
 export {
     PrismVimHighlighter,
-    PrismVimHighlighterFactory, VimToken
+    PrismVimHighlighterFactory,
+    VimToken,
+    ComplexVimToken
 };
 
-// Make VimToken globally available for compatibility
+// Make VimToken and ComplexVimToken globally available for compatibility
 if (typeof window !== 'undefined') {
   window.VimToken = VimToken;
+  window.ComplexVimToken = ComplexVimToken;
 }

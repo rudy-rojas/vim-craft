@@ -340,14 +340,14 @@ textarea.form-control {
 
 /* Base token styles - Tomorrow Night theme integration */
 .token {
-  color: #ccc;
+  /* color: #ccc; */
 }
 
 /* Keywords */
 .token.keyword,
 .token.builtin {
   color: #cc99cd;
-  font-weight: bold;
+  /* font-weight: bold; */
 }
 
 /* Strings */
@@ -436,7 +436,7 @@ textarea.form-control {
 /* CSS At-rules (@media, @import, etc.) */
 .token.atrule {
   color: #cc99cd;
-  font-weight: bold;
+  /* font-weight: bold; */ /* no aplicar bold */
 }
 
 /* CSS Selectors */
@@ -447,7 +447,7 @@ textarea.form-control {
 /* CSS Units and Important */
 .token.important {
   color: #e2777a;
-  font-weight: bold;
+  /* font-weight: bold; */
 }
 
 /* ========================================
@@ -541,12 +541,12 @@ textarea.form-control {
 .visual-selection.token.constant,
 .visual-selection.token.symbol {
   color: #f8c555 !important;
-  background: rgba(248, 197, 85, 0.25) !important;
+  /* background: rgba(248, 197, 85, 0.25) !important; no aplicar!!*/
 }
 
 .visual-selection.token.boolean {
   color: #f08d49 !important;
-  background: rgba(240, 141, 73, 0.25) !important;
+  /* background: rgba(240, 141, 73, 0.25) !important; no aplicar */
 }
 
 .visual-selection.token.tag,
@@ -561,13 +561,13 @@ textarea.form-control {
 .visual-selection.token.important,
 .visual-selection.token.atrule {
   color: #cc99cd !important;
-  background: rgba(204, 153, 205, 0.25) !important;
+  /* background: rgba(204, 153, 205, 0.25) !important; */
 }
 
 .visual-selection.token.operator,
 .visual-selection.token.punctuation {
   color: #ccc !important;
-  background: rgba(204, 204, 204, 0.25) !important;
+  /* background: rgba(204, 204, 204, 0.25) !important; */
 }
 
 .visual-selection.token.entity,

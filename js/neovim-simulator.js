@@ -66,50 +66,72 @@ class VisualEffectsProcessor {
 
   applyCursor(tokens, position, cursorClass) {
     const result = [...tokens];
-    
+    let cursorPlaced = false;
+
+    // First pass: Check if any complex token can handle this position
     for (let i = 0; i < result.length; i++) {
       const token = result[i];
-      
-      // Handle cursor at the exact end of a token (for insert mode)
-      if (position === token.end && cursorClass === 'cursor-insert') {
-        // Insert cursor after this token
-        const insertCursor = this.createToken('cursor', '', position, position);
-        insertCursor.cursor = cursorClass;
-        result.splice(i + 1, 0, insertCursor);
-        break;
-      }
-      
-      // Handle cursor within a token
-      if (token.start <= position && position < token.end) {
-        // Split token at cursor position
-        const relativePos = position - token.start;
-        const beforeCursor = token.value.substring(0, relativePos);
-        const atCursor = token.value.charAt(relativePos);
-        const afterCursor = token.value.substring(relativePos + 1);
 
-        const newTokens = [];
-        
-        if (beforeCursor) {
-          newTokens.push(this.createToken(token.type, beforeCursor, token.start, token.start + beforeCursor.length, token));
+      // Handle cursor within a token (primary case)
+      if (token.start <= position && position < token.end) {
+        // Prioritize complex tokens - they handle nested structures
+        if (token.isComplex) {
+          // True ComplexVimToken with nested structure
+          if (this.shouldSplitComplexTokenForCursor(token, position)) {
+            // Apply character-level cursor within the complex token structure
+            token.hasPartialCursor = true;
+            token.partialCursorPosition = position;
+            token.partialCursorClass = cursorClass;
+          } else {
+            // Apply cursor effects directly to the complex token
+            this.applyCursorToComplexToken(token, position, cursorClass);
+          }
+          cursorPlaced = true;
+          break;
         }
-        
-        if (atCursor) {
-          const cursorToken = this.createToken(token.type, atCursor, position, position + 1, token);
-          cursorToken.cursor = cursorClass;
-          newTokens.push(cursorToken);
-        } else if (cursorClass === 'cursor-insert') {
-          // For insert mode, create an empty cursor token at the position
+      }
+    }
+
+    // Second pass: If no complex token handled it, process simple tokens
+    if (!cursorPlaced) {
+      for (let i = 0; i < result.length; i++) {
+        const token = result[i];
+
+        // Handle cursor within a token (only simple tokens now)
+        if (token.start <= position && position < token.end && !token.isComplex) {
+          if (typeof token.canBeSplit === 'function' && !token.canBeSplit()) {
+            // Simple token that shouldn't be split (like property, selector)
+            // BUT for cursor positioning, we ALWAYS want character-level precision
+            // so we split despite canBeSplit = false
+            const newTokens = this.splitTokenForCursor(token, position, cursorClass);
+            result.splice(i, 1, ...newTokens);
+            i += newTokens.length - 1; // Adjust index for added tokens
+            cursorPlaced = true;
+            break;
+          } else {
+            // Normal token - split as usual
+            const newTokens = this.splitTokenForCursor(token, position, cursorClass);
+            result.splice(i, 1, ...newTokens);
+            i += newTokens.length - 1; // Adjust index for added tokens
+            cursorPlaced = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // Handle cursor at the exact end of any token (for insert mode)
+    // Only if cursor wasn't already placed within a token
+    if (!cursorPlaced && cursorClass === 'cursor-insert') {
+      for (let i = 0; i < result.length; i++) {
+        const token = result[i];
+        if (position === token.end) {
+          // Insert cursor after this token
           const insertCursor = this.createToken('cursor', '', position, position);
           insertCursor.cursor = cursorClass;
-          newTokens.push(insertCursor);
+          result.splice(i + 1, 0, insertCursor);
+          break;
         }
-        
-        if (afterCursor) {
-          newTokens.push(this.createToken(token.type, afterCursor, position + 1, token.end, token));
-        }
-
-        result.splice(i, 1, ...newTokens);
-        break;
       }
     }
 
@@ -118,27 +140,115 @@ class VisualEffectsProcessor {
 
   applySelection(tokens, selectionStart, selectionEnd) {
     const result = [...tokens];
-    
+
     // Calculamos la posición del último carácter seleccionado
     const lastSelectedPosition = selectionEnd - 1;
-    
+
     for (let i = 0; i < result.length; i++) {
       const token = result[i];
-      
+
       // Check if token overlaps with selection
       if (token.start < selectionEnd && token.end > selectionStart) {
         const overlapStart = Math.max(token.start, selectionStart);
         const overlapEnd = Math.min(token.end, selectionEnd);
-        
+
         if (overlapStart < overlapEnd) {
-          const newTokens = this.splitTokenForSelection(token, overlapStart, overlapEnd, lastSelectedPosition);
-          result.splice(i, 1, ...newTokens);
-          i += newTokens.length - 1; // Adjust index for added tokens
+          // Handle different types of tokens
+          if (token.isComplex) {
+            // True ComplexVimToken with nested structure
+            if (this.shouldSplitComplexToken(token, overlapStart, overlapEnd)) {
+              // Apply character-level selection within the complex token structure
+              token.hasPartialSelection = true;
+              token.partialSelectionStart = overlapStart;
+              token.partialSelectionEnd = overlapEnd;
+              token.partialLastSelectedPosition = lastSelectedPosition;
+
+              // Ensure no conflicting whole-token properties are set
+              token.selected = false;
+              token.isLastSelectedChar = false;
+            } else {
+              // Apply selection effects directly to the complex token
+              this.applySelectionToComplexToken(token, overlapStart, overlapEnd, lastSelectedPosition);
+            }
+          } else if (typeof token.canBeSplit === 'function' && !token.canBeSplit()) {
+            // Simple token that shouldn't be split (like property, selector)
+            // BUT we need to check if only part of it is selected
+            const tokenStart = token.start;
+            const tokenEnd = token.end;
+            const isEntireTokenSelected = overlapStart <= tokenStart && overlapEnd >= tokenEnd;
+
+            if (isEntireTokenSelected) {
+              // Entire token is selected - apply selection to whole token
+              this.applySelectionToComplexToken(token, overlapStart, overlapEnd, lastSelectedPosition);
+            } else {
+              // Only part is selected - we need to split despite canBeSplit = false
+              const newTokens = this.splitTokenForSelection(token, overlapStart, overlapEnd, lastSelectedPosition);
+              result.splice(i, 1, ...newTokens);
+              i += newTokens.length - 1; // Adjust index for added tokens
+            }
+          } else {
+            // Normal token - split as usual
+            const newTokens = this.splitTokenForSelection(token, overlapStart, overlapEnd, lastSelectedPosition);
+            result.splice(i, 1, ...newTokens);
+            i += newTokens.length - 1; // Adjust index for added tokens
+          }
         }
       }
     }
 
     return result;
+  }
+
+  /**
+   * Determine if a ComplexVimToken should be split for selection
+   */
+  shouldSplitComplexToken(token, selectionStart, selectionEnd) {
+    // For Visual mode selections, we ALWAYS want character-level precision
+    // regardless of how much of the token is selected.
+    // This ensures consistent behavior and avoids incorrect whole-token highlighting.
+    return true;
+  }
+
+  /**
+   * Convert ComplexVimToken to simple tokens for splitting
+   */
+  convertComplexTokenToSimple(complexToken) {
+    if (!complexToken.isComplex) {
+      return [complexToken];
+    }
+
+    // Create a simple VimToken with the same properties but no complex structure
+    const simpleToken = this.createToken(
+      complexToken.type,
+      complexToken.value,
+      complexToken.start,
+      complexToken.end,
+      complexToken
+    );
+
+    // Copy important properties
+    if (complexToken.prismClasses) {
+      simpleToken.prismClasses = [...complexToken.prismClasses];
+    }
+
+    return [simpleToken];
+  }
+
+  /**
+   * Apply selection effects to ComplexVimToken without splitting
+   */
+  applySelectionToComplexToken(token, selectionStart, selectionEnd, lastSelectedPosition) {
+    // Determine the type of selection effect to apply
+    const tokenStart = token.start;
+    const tokenEnd = token.end;
+
+    // Always mark as selected if there's any overlap
+    token.selected = true;
+
+    // Check if this token contains the last selected character
+    if (lastSelectedPosition >= tokenStart && lastSelectedPosition < tokenEnd) {
+      token.isLastSelectedChar = true;
+    }
   }
 
   splitTokenForSelection(token, selectionStart, selectionEnd, lastSelectedPosition) {
@@ -241,6 +351,77 @@ class VisualEffectsProcessor {
     
     return tokens;
   }
+
+  /**
+   * Determine if a ComplexVimToken should be split for cursor positioning
+   */
+  shouldSplitComplexTokenForCursor(token, cursorPosition) {
+    // For cursor positioning, we ALWAYS want character-level precision
+    // regardless of cursor position within the token
+    // This ensures that even the first character gets individual cursor treatment
+    return true;
+  }
+
+  /**
+   * Apply cursor effects to ComplexVimToken without splitting
+   */
+  applyCursorToComplexToken(token, cursorPosition, cursorClass) {
+    // Apply cursor directly to the token
+    token.cursor = cursorClass;
+  }
+
+  /**
+   * Split token for cursor positioning (similar to selection but simpler)
+   */
+  splitTokenForCursor(token, cursorPosition, cursorClass) {
+    const tokens = [];
+    const value = token.value;
+
+    // Before cursor
+    if (token.start < cursorPosition) {
+      const beforeLength = cursorPosition - token.start;
+      tokens.push(this.createToken(
+        token.type,
+        value.substring(0, beforeLength),
+        token.start,
+        cursorPosition,
+        token
+      ));
+    }
+
+    // Cursor character
+    const cursorChar = value.charAt(cursorPosition - token.start);
+    if (cursorChar) {
+      const cursorToken = this.createToken(
+        token.type,
+        cursorChar,
+        cursorPosition,
+        cursorPosition + 1,
+        token
+      );
+      cursorToken.cursor = cursorClass;
+      tokens.push(cursorToken);
+    } else if (cursorClass === 'cursor-insert') {
+      // For insert mode, create an empty cursor token at the position
+      const insertCursor = this.createToken('cursor', '', cursorPosition, cursorPosition);
+      insertCursor.cursor = cursorClass;
+      tokens.push(insertCursor);
+    }
+
+    // After cursor
+    if (token.end > cursorPosition + 1) {
+      const afterStartInToken = cursorPosition + 1 - token.start;
+      tokens.push(this.createToken(
+        token.type,
+        value.substring(afterStartInToken),
+        cursorPosition + 1,
+        token.end,
+        token
+      ));
+    }
+
+    return tokens;
+  }
 }
 
 // Token renderer
@@ -255,9 +436,30 @@ class TokenRenderer {
   }
 
   renderToken(token) {
+    // Handle ComplexVimToken with nested structure
+    if (token.isComplex && typeof token.applyVimEffects === 'function') {
+      // Check if this token has partial cursor
+      if (token.hasPartialCursor && typeof token.applyCursorWithPosition === 'function') {
+        return token.applyCursorWithPosition(
+          token.partialCursorPosition,
+          token.partialCursorClass
+        );
+      }
+      // Check if this token has partial selection
+      else if (token.hasPartialSelection && typeof token.applyVimEffectsWithPartialSelection === 'function') {
+        return token.applyVimEffectsWithPartialSelection(
+          token.partialSelectionStart,
+          token.partialSelectionEnd,
+          token.partialLastSelectedPosition
+        );
+      } else {
+        return token.applyVimEffects();
+      }
+    }
+
     const escapedValue = this.escapeHtml(token.value);
     const classes = this.getTokenClasses(token);
-    
+
     // Handle newlines specially
     if (token.type === 'newline') {
       if (token.selected) {
@@ -265,12 +467,12 @@ class TokenRenderer {
       }
       return '\n';
     }
-    
+
     // Handle empty cursor tokens for insert mode
     if (token.type === 'cursor' && token.value === '') {
       return '<span class="cursor-insert"></span>';
     }
-    
+
     if (classes.length > 0) {
       return `<span class="${classes.join(' ')}">${escapedValue}</span>`;
     }
