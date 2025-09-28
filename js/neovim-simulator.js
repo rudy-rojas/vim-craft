@@ -171,10 +171,17 @@ class VisualEffectsProcessor {
         if (token.start <= position && position <= token.end && !token.isComplex) {
           console.log(`🎯 Found candidate token ${i} for position ${position}: [${token.start}-${token.end}]`);
 
-          // If position is exactly at token boundaries, prefer the token that STARTS at this position
+          // Different behavior for Normal vs Insert mode at token boundaries
           if (position === token.end) {
-            console.log(`⏭️ Skipping token ${i} - cursor is at end boundary, looking for token that starts here`);
-            continue; // Skip this token and look for one that starts at this position
+            if (cursorClass === 'cursor') {
+              // NORMAL MODE: Prefer token that STARTS at this position (cursor ON character)
+              console.log(`⏭️ [NORMAL] Skipping token ${i} - cursor is at end boundary, looking for token that starts here`);
+              continue; // Skip this token and look for one that starts at this position
+            } else if (cursorClass === 'cursor-insert') {
+              // INSERT MODE: Can place cursor at end of token (cursor BETWEEN characters)
+              console.log(`✅ [INSERT] Processing token ${i} - cursor can be at end boundary in insert mode`);
+              // Continue processing this token for insert mode
+            }
           }
 
           console.log(`🎯 Processing simple token ${i} for position ${position}: [${token.start}-${token.end}]`);
@@ -562,8 +569,11 @@ class VisualEffectsProcessor {
     }
 
     // Cursor character
-    const cursorChar = value.charAt(cursorPosition - token.start);
+    const cursorCharIndex = cursorPosition - token.start;
+    const cursorChar = value.charAt(cursorCharIndex);
+
     if (cursorChar) {
+      // Normal case: cursor is on an actual character
       const cursorToken = this.createToken(
         token.type,
         cursorChar,
@@ -580,8 +590,11 @@ class VisualEffectsProcessor {
       insertCursor.cursor = cursorClass;
       tokens.push(insertCursor);
       console.log(`✂️ Created insert cursor token: [${insertCursor.start}-${insertCursor.end}] (empty) with cursor class: ${cursorClass}`);
+    } else if (cursorClass === 'cursor' && cursorCharIndex >= value.length) {
+      // Normal mode at end of token - this shouldn't happen with our new logic, but just in case
+      console.log(`⚠️ [NORMAL] Cursor at end of token - this should be handled by a different token`);
     } else {
-      console.log(`⚠️ No cursor character found at position ${cursorPosition} in token value "${value}"`);
+      console.log(`⚠️ No cursor character found at position ${cursorPosition} in token value "${value}" (index: ${cursorCharIndex})`);
     }
 
     // After cursor
