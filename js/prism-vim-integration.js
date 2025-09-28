@@ -227,11 +227,36 @@ class ComplexVimToken extends VimToken {
    * Render with partial cursor applied to specific character within the nested structure
    */
   renderWithPartialCursor(cursorPosition, cursorClass) {
+    console.log(`🖺 ComplexVimToken renderWithPartialCursor:`, {
+      cursorPosition,
+      cursorClass,
+      tokenStart: this.start,
+      tokenEnd: this.end,
+      hasNestedStructure: !!this.nestedStructure,
+      tokenValue: this.value?.substring(0, 20) || 'empty'
+    });
+
     if (!this.nestedStructure) {
-      return this.applySimplePartialCursor(cursorPosition, cursorClass);
+      console.log('🖺 Using simple partial cursor rendering');
+      const result = this.applySimplePartialCursor(cursorPosition, cursorClass);
+      console.log('🖺 Simple partial cursor result:', {
+        hasResult: !!result,
+        length: result?.length || 0,
+        includesCursorClass: result?.includes(cursorClass) || false,
+        preview: result?.substring(0, 100) || 'empty'
+      });
+      return result;
     }
 
-    return this.renderTokenStructureWithCursor(this.nestedStructure, cursorPosition, cursorClass);
+    console.log('🖺 Using complex token structure cursor rendering');
+    const result = this.renderTokenStructureWithCursor(this.nestedStructure, cursorPosition, cursorClass);
+    console.log('🖺 Complex structure cursor result:', {
+      hasResult: !!result,
+      length: result?.length || 0,
+      includesCursorClass: result?.includes(cursorClass) || false,
+      preview: result?.substring(0, 100) || 'empty'
+    });
+    return result;
   }
 
   /**
@@ -253,6 +278,15 @@ class ComplexVimToken extends VimToken {
     const tokenEnd = this.end;
     const value = this.value;
     let result = '';
+    let cursorApplied = false;
+
+    console.log(`🖊 Simple partial cursor processing:`, {
+      cursorPosition,
+      tokenStart,
+      tokenEnd,
+      valueLength: value?.length || 0,
+      value: value?.substring(0, 20) || 'empty'
+    });
 
     for (let i = 0; i < value.length; i++) {
       const charPos = tokenStart + i;
@@ -260,11 +294,19 @@ class ComplexVimToken extends VimToken {
       const escapedChar = this.escapeHtml(char);
 
       if (charPos === cursorPosition) {
+        console.log(`🎯 Cursor match at position ${charPos}, char: "${char}"`);
         result += `<span class="${cursorClass}">${escapedChar}</span>`;
+        cursorApplied = true;
       } else {
         result += escapedChar;
       }
     }
+
+    console.log(`🖊 Simple cursor result:`, {
+      cursorApplied,
+      resultLength: result.length,
+      includesCursorClass: result.includes(cursorClass)
+    });
 
     // Handle cursor at the exact end of the token (Insert mode)
     if (cursorPosition === tokenEnd) {
@@ -515,21 +557,113 @@ class PrismVimHighlighter {
    * Tokenize code using Prism.js with position tracking
    */
   tokenize(code) {
+    console.group('🔤 [DEBUG TOKENIZACIÓN] Prism Processing');
+    console.log('🎯 Language:', this.language);
+    console.log('🔄 Using fallback:', this.useFallback);
+
     if (this.useFallback) {
-      return this.fallbackTokenize(code);
+      console.log('⚠️ Using fallback tokenization');
+      const result = this.fallbackTokenize(code);
+      console.groupEnd();
+      return result;
     }
-    
+
     try {
-      console.log(`Tokenizing ${this.language} code:`, code.substring(0, 100) + '...');
-      
+      console.log('📝 Code to tokenize (first 100 chars):', JSON.stringify(code.substring(0, 100)));
+      if (code.length > 100) {
+        console.log('📝 Code to tokenize (last 50 chars):', JSON.stringify(code.substring(code.length - 50)));
+      }
+
       // Use Prism to tokenize
       const prismTokens = Prism.tokenize(code, Prism.languages[this.language]);
-      console.log('Prism tokens:', prismTokens);
-      
+
+      // === DEBUG TOKENS PRISM ===
+      console.group('🧩 [DEBUG PRISM TOKENS] Raw Prism Output');
+      console.log('📊 Total Prism tokens:', prismTokens.length);
+      console.log('🔍 Prism tokens structure:', prismTokens);
+
+      // Análisis detallado de tipos de tokens
+      const tokenTypes = {};
+      const tokenSamples = [];
+      prismTokens.forEach((token, index) => {
+        if (typeof token === 'string') {
+          tokenTypes['string'] = (tokenTypes['string'] || 0) + 1;
+          if (tokenSamples.length < 5) {
+            tokenSamples.push({ index, type: 'string', preview: JSON.stringify(token.substring(0, 20)) });
+          }
+        } else if (token && typeof token === 'object') {
+          const type = token.type || 'unknown';
+          tokenTypes[type] = (tokenTypes[type] || 0) + 1;
+          if (tokenSamples.length < 5) {
+            const preview = typeof token.content === 'string'
+              ? JSON.stringify(token.content.substring(0, 20))
+              : Array.isArray(token.content) ? `[Array ${token.content.length}]` : '[Object]';
+            tokenSamples.push({ index, type, preview });
+          }
+        }
+      });
+
+      console.log('📈 Token type distribution:', tokenTypes);
+      console.log('📋 Token samples:', tokenSamples);
+      console.groupEnd();
+
       // Convert to VimTokens with position tracking
       const vimTokens = this.convertPrismTokensToVim(prismTokens, code);
-      console.log('Converted VimTokens:', vimTokens);
-      
+
+      // === DEBUG VIM TOKENS ===
+      console.group('⚡ [DEBUG VIM TOKENS] Conversion Results');
+      console.log('📊 Total VimTokens created:', vimTokens.length);
+
+      // Análisis de VimTokens
+      const vimTokenTypes = {};
+      const vimTokenSamples = [];
+      let totalCoverage = 0;
+
+      vimTokens.forEach((token, index) => {
+        const type = token.isComplex ? 'ComplexVimToken' : 'VimToken';
+        vimTokenTypes[type] = (vimTokenTypes[type] || 0) + 1;
+        totalCoverage += (token.end - token.start);
+
+        if (vimTokenSamples.length < 5) {
+          vimTokenSamples.push({
+            index,
+            type,
+            tokenType: token.type,
+            start: token.start,
+            end: token.end,
+            length: token.end - token.start,
+            preview: JSON.stringify(token.value?.substring(0, 20) || '')
+          });
+        }
+      });
+
+      console.log('📈 VimToken type distribution:', vimTokenTypes);
+      console.log('📋 VimToken samples:', vimTokenSamples);
+      console.log('📏 Total character coverage:', totalCoverage, '/', code.length);
+
+      if (totalCoverage !== code.length) {
+        console.warn('⚠️ Coverage mismatch! Tokens do not cover entire code length');
+      }
+
+      // Verificar continuidad de posiciones
+      let prevEnd = 0;
+      const gaps = [];
+      vimTokens.forEach((token, index) => {
+        if (token.start !== prevEnd) {
+          gaps.push({ after: index - 1, gap: [prevEnd, token.start] });
+        }
+        prevEnd = token.end;
+      });
+
+      if (gaps.length > 0) {
+        console.warn('⚠️ Position gaps detected:', gaps);
+      } else {
+        console.log('✅ Position continuity verified');
+      }
+
+      console.groupEnd();
+      console.groupEnd(); // Close main tokenization group
+
       return vimTokens;
     } catch (error) {
       console.error('Prism tokenization failed:', error);
@@ -674,24 +808,27 @@ class PrismVimHighlighter {
     }
 
     // These token types should ALWAYS be preserved to maintain proper syntax highlighting
+    // ONLY preserve types that genuinely need complex nested structure
     const alwaysPreserveTypes = [
-      'atrule',      // @import, @media, etc.
-      'url',         // url() functions
-      'tag',         // HTML tags
-      'function',    // CSS functions like rgba(), calc(), etc.
-      'selector',    // CSS selectors
-      'property',    // CSS properties
-      'string',      // String literals
-      'comment',     // Comments
-      'number',      // Numbers
-      'important',   // !important
-      'keyword',     // Keywords
-      'punctuation', // Punctuation marks like {, }, :, ;
-      'operator',    // Operators
-      'variable',    // Variables
-      'class-name',  // Class names
-      'boolean',     // Boolean values
-      'rule'         // CSS rules like @import, @media, etc.
+      'atrule',      // @import, @media, etc. - can have complex nested content
+      'url',         // url() functions - can have nested content
+      'tag',         // HTML tags - can have nested attributes
+      'function',    // CSS functions like rgba(), calc(), etc. - can have nested content
+      'selector',    // CSS selectors - can have complex nested structure
+      'property',    // CSS properties - needed for CSS-specific behavior
+      'important',   // !important - specific CSS construct
+      'rule'         // CSS rules like @import, @media, etc. - can have nested content
+
+      // REMOVED SIMPLE TYPES for better cursor placement:
+      // 'string',      // String literals - simple tokens
+      // 'comment',     // Comments - simple tokens
+      // 'number',      // Numbers - simple tokens
+      // 'keyword',     // Keywords - simple tokens
+      // 'punctuation', // Punctuation - simple tokens
+      // 'operator',    // Operators - simple tokens
+      // 'variable',    // Variables - simple tokens
+      // 'class-name',  // Class names - simple tokens
+      // 'boolean',     // Boolean values - simple tokens
     ];
 
     // Always preserve these types regardless of content structure

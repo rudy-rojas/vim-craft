@@ -94,7 +94,7 @@ class PrismLoader {
    * Load a single language component from local files
    */
   _loadLanguageComponent(language) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // Skip if already loaded
       if (typeof Prism !== 'undefined' && Prism.languages[language]) {
         resolve();
@@ -108,9 +108,9 @@ class PrismLoader {
         console.log(`Prism ${language} component loaded`);
         resolve();
       };
-      script.onerror = () => {
-        console.warn(`Failed to load prism-${language}.js`);
-        resolve(); // Don't reject, just warn
+      script.onerror = (error) => {
+        console.warn(`Failed to load prism-${language}.js:`, error);
+        resolve(); // Don't reject, just warn - always resolve to prevent promise rejection
       };
       document.head.appendChild(script);
     });
@@ -184,11 +184,15 @@ const prismLoader = new PrismLoader();
 // Auto-load Prism when the DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    prismLoader.loadPrism().catch(console.error);
+    prismLoader.loadPrism().catch(error => {
+      console.error('Failed to auto-load Prism:', error);
+    });
   });
 } else {
   // DOM already loaded
-  prismLoader.loadPrism().catch(console.error);
+  prismLoader.loadPrism().catch(error => {
+    console.error('Failed to auto-load Prism:', error);
+  });
 }
 
 // Export for ES module usage
