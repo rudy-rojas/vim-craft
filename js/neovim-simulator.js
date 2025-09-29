@@ -967,6 +967,11 @@ class NeovimModeSimulator {
       sourceCodePreview: sourceCode.substring(0, 50) + (sourceCode.length > 50 ? '...' : '')
     });
 
+    // Debug específico para modo normal y tokenización
+    if (mode === 'normal') {
+      console.log('🔍 [TOKENIZATION DEBUG] Normal mode - analyzing tokenization integrity');
+    }
+
     // Use the highlighter passed in constructor or require it as parameter
     const highlighter = this.highlighter;
     if (!highlighter) {
@@ -988,6 +993,22 @@ class NeovimModeSimulator {
         prismClasses: token.prismClasses || []
       }))
     });
+
+    // Debug específico para modo normal: estado ANTES de aplicar efectos
+    if (mode === 'normal') {
+      console.log('🔍 [TOKENIZATION DEBUG] BEFORE cursor application state', {
+        totalTokens: tokens.length,
+        complexTokens: tokens.filter(t => t.isComplex).length,
+        simpleTokens: tokens.filter(t => !t.isComplex).length,
+        characterCoverage: {
+          totalCharsInTokens: tokens.reduce((sum, t) => sum + (t.value?.length || 0), 0),
+          sourceCodeLength: sourceCode.length,
+          matches: tokens.reduce((sum, t) => sum + (t.value?.length || 0), 0) === sourceCode.length
+        },
+        cursorTargetToken: tokens.find(t => t.start <= selectionStart && selectionStart < t.end) || null,
+        tokenContinuity: this.checkTokenContinuity(tokens, sourceCode)
+      });
+    }
 
     // Apply visual effects based on mode
     const processedTokens = this.visualEffectsProcessor.process(
@@ -1012,6 +1033,24 @@ class NeovimModeSimulator {
       }))
     });
 
+    // Debug específico para modo normal: estado DESPUÉS de aplicar efectos
+    if (mode === 'normal') {
+      console.log('🔍 [TOKENIZATION DEBUG] AFTER cursor application state', {
+        totalTokens: processedTokens.length,
+        tokenCountChange: processedTokens.length - tokens.length,
+        complexTokens: processedTokens.filter(t => t.isComplex).length,
+        simpleTokens: processedTokens.filter(t => !t.isComplex).length,
+        tokensWithPreRendered: processedTokens.filter(t => t.preRenderedHtml).length,
+        characterCoverage: {
+          totalCharsInTokens: processedTokens.reduce((sum, t) => sum + (t.value?.length || 0), 0),
+          sourceCodeLength: sourceCode.length,
+          matches: processedTokens.reduce((sum, t) => sum + (t.value?.length || 0), 0) === sourceCode.length
+        },
+        tokenContinuity: this.checkTokenContinuity(processedTokens, sourceCode),
+        tokenStructureIntegrity: this.checkTokenStructureIntegrity(tokens, processedTokens, selectionStart)
+      });
+    }
+
     // Render the tokens
     const renderedCode = renderer.render(processedTokens);
 
@@ -1035,6 +1074,88 @@ class NeovimModeSimulator {
   generateStatusBar(mode) {
     const modeText = mode.toUpperCase();
     return `\n<div class="status-bar-ide">-- ${modeText} --</div>`;
+  }
+
+  /**
+   * Check if tokens maintain character continuity with source code
+   */
+  checkTokenContinuity(tokens, sourceCode) {
+    let reconstructed = '';
+    let hasGaps = false;
+    let lastEnd = 0;
+
+    for (const token of tokens) {
+      // Check for gaps between tokens
+      if (token.start > lastEnd) {
+        hasGaps = true;
+      }
+
+      reconstructed += token.value || '';
+      lastEnd = token.end;
+    }
+
+    return {
+      reconstructedLength: reconstructed.length,
+      sourceLength: sourceCode.length,
+      hasGaps,
+      matches: reconstructed === sourceCode,
+      firstDifference: reconstructed !== sourceCode ?
+        this.findFirstDifference(reconstructed, sourceCode) : null
+    };
+  }
+
+  /**
+   * Check integrity of token structure after cursor application
+   */
+  checkTokenStructureIntegrity(originalTokens, processedTokens, cursorPosition) {
+    const originalComplex = originalTokens.filter(t => t.isComplex);
+    const processedComplex = processedTokens.filter(t => t.isComplex);
+    const preRenderedTokens = processedTokens.filter(t => t.preRenderedHtml);
+
+    // Find the token that should contain the cursor
+    const originalCursorToken = originalTokens.find(t =>
+      t.start <= cursorPosition && cursorPosition < t.end
+    );
+    const processedCursorTokens = processedTokens.filter(t => t.cursor);
+
+    return {
+      originalComplexCount: originalComplex.length,
+      processedComplexCount: processedComplex.length,
+      complexTokensLost: originalComplex.length - processedComplex.length,
+      preRenderedCount: preRenderedTokens.length,
+      originalCursorToken: originalCursorToken ? {
+        type: originalCursorToken.type,
+        value: originalCursorToken.value,
+        isComplex: originalCursorToken.isComplex,
+        start: originalCursorToken.start,
+        end: originalCursorToken.end
+      } : null,
+      processedCursorTokens: processedCursorTokens.map(t => ({
+        type: t.type,
+        value: t.value,
+        isComplex: t.isComplex,
+        cursor: t.cursor,
+        hasPreRendered: !!t.preRenderedHtml
+      })),
+      cursorApplicationMethod: preRenderedTokens.length > 0 ? 'complex-rendering' : 'token-splitting'
+    };
+  }
+
+  /**
+   * Find first character difference between two strings
+   */
+  findFirstDifference(str1, str2) {
+    for (let i = 0; i < Math.max(str1.length, str2.length); i++) {
+      if (str1[i] !== str2[i]) {
+        return {
+          position: i,
+          str1Char: str1[i] || 'EOF',
+          str2Char: str2[i] || 'EOF',
+          context: `...${str1.substring(Math.max(0, i-5), i+5)}... vs ...${str2.substring(Math.max(0, i-5), i+5)}...`
+        };
+      }
+    }
+    return null;
   }
 
   validateModeInput(mode, selectionStart, selectionEnd) {

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Option B Validation - Enhanced Cursor in ComplexVimToken</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #fff; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #444; background: #2d2d2d; }
+        .test-result { margin: 10px 0; padding: 10px; border-left: 3px solid; }
+        .success { border-color: #4caf50; background: #1b5e20; }
+        .error { border-color: #f44336; background: #7f0000; }
+        .info { border-color: #2196f3; background: #0d47a1; }
+        .debug-output { background: #000; padding: 10px; white-space: pre-wrap; font-size: 12px; overflow-x: auto; }
+        .enhanced-cursor-demo { padding: 10px; background: #333; margin: 10px 0; }
+        .cursor-overlay { position: relative; display: inline-block; }
+        .cursor-char-original { position: absolute; z-index: 1; }
+        .cursor-char-overlay { position: relative; z-index: 2; background: #ff0; color: #000; }
+        .cursor-char-overlay-dark { position: relative; z-index: 2; background: #000; color: #ff0; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Option B Validation: Enhanced Cursor in ComplexVimToken</h1>
+
+    <div class="test-section">
+        <h2>🧪 Test Scenarios</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Tokenization Integrity Report</h2>
+        <div id="integrity-report"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎨 Enhanced Cursor Demo</h2>
+        <div id="cursor-demo"></div>
+    </div>
+
+    <script type="module">
+        import { NeovimModeSimulator } from './js/neovim-simulator.js';
+
+        const resultsDiv = document.getElementById('test-results');
+        const integrityDiv = document.getElementById('integrity-report');
+        const demoDiv = document.getElementById('cursor-demo');
+        const simulator = new NeovimModeSimulator();
+
+        // Capture console logs
+        const capturedLogs = [];
+        const originalLog = console.log;
+        console.log = (...args) => {
+            capturedLogs.push(args);
+            originalLog(...args);
+        };
+
+        // Test cases designed to trigger both simple and complex token handling
+        const testCases = [
+            {
+                name: "Complex JavaScript Function",
+                language: "javascript",
+                code: `function complexFunction(param) {
+    return param.property.method();
+}`,
+                cursorPosition: 18, // Position at 'F' in 'Function' - should be complex token
+                expectedEnhancedCursor: true,
+                description: "Tests enhanced cursor in function keyword (complex token)"
+            },
+            {
+                name: "TypeScript Interface",
+                language: "typescript",
+                code: `interface UserData<T> {
+    name: string;
+    validate: (data: T) => boolean;
+}`,
+                cursorPosition: 10, // Position at 'U' in 'UserData'
+                expectedEnhancedCursor: true,
+                description: "Tests enhanced cursor in TypeScript interface name"
+            },
+            {
+                name: "Simple String Content",
+                language: "javascript",
+                code: `const message = "Hello World";`,
+                cursorPosition: 17, // Position at 'H' in "Hello"
+                expectedEnhancedCursor: true,
+                description: "Tests enhanced cursor in string content"
+            },
+            {
+                name: "Complex Nested Object",
+                language: "javascript",
+                code: `const config = {
+    api: {
+        endpoint: "https://api.example.com",
+        timeout: 5000
+    }
+};`,
+                cursorPosition: 25, // Position in nested object property
+                expectedEnhancedCursor: true,
+                description: "Tests enhanced cursor in nested object structure"
+            }
+        ];
+
+        // Run validation tests
+        let allTestsPassed = true;
+        const integrityResults = [];
+
+        for (const testCase of testCases) {
+            capturedLogs.length = 0; // Clear logs
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result';
+
+            try {
+                console.log(`\\n🧪 TESTING: ${testCase.name}`);
+                console.log(`Code: ${testCase.code.substring(0, 50)}...`);
+                console.log(`Cursor Position: ${testCase.cursorPosition}`);
+
+                const renderResult = simulator.simulate(
+                    testCase.code,
+                    'normal',
+                    testCase.cursorPosition,
+                    testCase.cursorPosition,
+                    testCase.language
+                );
+
+                // Check for enhanced cursor presence
+                const hasEnhancedCursor = renderResult.includes('cursor-overlay');
+                const hasComplexTokenEnhanced = capturedLogs.some(log =>
+                    log.some(arg =>
+                        typeof arg === 'string' &&
+                        (arg.includes('[COMPLEX TOKEN ENHANCED]') || arg.includes('[COMPLEX TOKEN]'))
+                    )
+                );
+
+                // Extract tokenization integrity data
+                const integrityLogs = capturedLogs.filter(log =>
+                    log.some(arg =>
+                        typeof arg === 'string' &&
+                        arg.includes('TOKENIZATION DEBUG')
+                    )
+                );
+
+                if (integrityLogs.length > 0) {
+                    integrityResults.push({
+                        testName: testCase.name,
+                        integrityData: integrityLogs
+                    });
+                }
+
+                // Determine test result
+                const testPassed = hasEnhancedCursor === testCase.expectedEnhancedCursor;
+                if (!testPassed) allTestsPassed = false;
+
+                resultDiv.className += testPassed ? ' success' : ' error';
+                resultDiv.innerHTML = `
+                    <h3>${testCase.name} ${testPassed ? '✅' : '❌'}</h3>
+                    <p><strong>Description:</strong> ${testCase.description}</p>
+                    <p><strong>Enhanced Cursor Found:</strong> ${hasEnhancedCursor ? 'Yes' : 'No'} (Expected: ${testCase.expectedEnhancedCursor ? 'Yes' : 'No'})</p>
+                    <p><strong>Complex Token Enhanced:</strong> ${hasComplexTokenEnhanced ? 'Yes' : 'No'}</p>
+                    <details>
+                        <summary>Rendered HTML Preview</summary>
+                        <div class="debug-output">${renderResult.substring(0, 500)}...</div>
+                    </details>
+                `;
+
+            } catch (error) {
+                allTestsPassed = false;
+                resultDiv.className += ' error';
+                resultDiv.innerHTML = `
+                    <h3>${testCase.name} ❌</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                `;
+            }
+
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // Generate integrity report
+        integrityDiv.innerHTML = `
+            <div class="test-result ${allTestsPassed ? 'success' : 'error'}">
+                <h3>Overall Result: ${allTestsPassed ? '✅ All Tests Passed' : '❌ Some Tests Failed'}</h3>
+                <p><strong>Option B Implementation Status:</strong> ${allTestsPassed ? 'Successfully implemented' : 'Needs attention'}</p>
+                <p><strong>Enhanced Cursor Consistency:</strong> Enhanced cursor should now work across all token types</p>
+            </div>
+
+            <details>
+                <summary>📋 Detailed Tokenization Integrity Data</summary>
+                <div class="debug-output">${JSON.stringify(integrityResults, null, 2)}</div>
+            </details>
+        `;
+
+        // Demo section
+        demoDiv.innerHTML = `
+            <h3>Enhanced Cursor Visual Comparison</h3>
+            <p><strong>Before (Basic cursor):</strong> <span style="background: #ff0; color: #000;">F</span>unction</p>
+            <p><strong>After (Enhanced cursor):</strong>
+                <span class="cursor-overlay">
+                    <span class="cursor-char-original">F</span>
+                    <span class="cursor-char-overlay">F</span>
+                </span>unction
+            </p>
+            <p><em>The enhanced cursor creates a visual overlay effect for better IDE-like appearance</em></p>
+        `;
+
+        // Restore console
+        console.log = originalLog;
+
+        console.log('🎯 Option B Validation Complete!');
+        console.log('📊 Check the page for detailed results and tokenization integrity report');
+    </script>
+</body>
+</html>

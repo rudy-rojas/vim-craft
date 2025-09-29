@@ -296,7 +296,17 @@ class ComplexVimToken extends VimToken {
 
       if (charPos === cursorPosition) {
         console.log(`🎯 Cursor match at position ${charPos}, char: "${char}"`);
-        result += `<span class="${cursorClass}">${escapedChar}</span>`;
+
+        // Use enhanced cursor rendering for normal mode cursor
+        if (cursorClass === 'cursor' && char && char.length === 1) {
+          console.log('🎨 [COMPLEX TOKEN] Using enhanced cursor rendering', {
+            char,
+            prismClasses: this.prismClasses || []
+          });
+          result += this.renderEnhancedCursorForComplexToken(escapedChar, this.prismClasses || []);
+        } else {
+          result += `<span class="${cursorClass}">${escapedChar}</span>`;
+        }
         cursorApplied = true;
       } else {
         result += escapedChar;
@@ -306,7 +316,7 @@ class ComplexVimToken extends VimToken {
     console.log(`🖊 Simple cursor result:`, {
       cursorApplied,
       resultLength: result.length,
-      includesCursorClass: result.includes(cursorClass)
+      includesCursorClass: result.includes(cursorClass) || result.includes('cursor-overlay')
     });
 
     // Handle cursor at the exact end of the token (Insert mode)
@@ -320,6 +330,66 @@ class ComplexVimToken extends VimToken {
     }
 
     return result;
+  }
+
+  /**
+   * Enhanced cursor rendering for complex tokens (Option B implementation)
+   */
+  renderEnhancedCursorForComplexToken(escapedValue, syntaxClasses) {
+    console.log('🎨 [COMPLEX TOKEN ENHANCED] Starting enhanced cursor rendering', {
+      escapedValue,
+      syntaxClasses
+    });
+
+    // Filter out any existing cursor class
+    const filteredClasses = syntaxClasses.filter(cls => cls !== 'cursor');
+
+    // Determine if we need to adjust overlay color for better contrast
+    const needsDarkOverlay = this.shouldUseDarkOverlay(filteredClasses);
+    const overlayClass = needsDarkOverlay ? 'cursor-char-overlay-dark' : 'cursor-char-overlay';
+
+    console.log('🎨 [COMPLEX TOKEN ENHANCED] Overlay class selection', {
+      filteredClasses,
+      needsDarkOverlay,
+      selectedOverlayClass: overlayClass
+    });
+
+    // Combine classes properly - original character keeps all syntax classes
+    const originalClasses = ['cursor-char-original', ...filteredClasses];
+    const overlayClasses = [overlayClass, ...filteredClasses];
+
+    console.log('🎨 [COMPLEX TOKEN ENHANCED] Final class combinations', {
+      originalClasses,
+      overlayClasses
+    });
+
+    // Create the enhanced cursor structure with overlay
+    const result = `<span class="cursor-overlay">` +
+           `<span class="${originalClasses.join(' ')}">${escapedValue}</span>` +
+           `<span class="${overlayClasses.join(' ')}">${escapedValue}</span>` +
+           `</span>`;
+
+    console.log('🎨 [COMPLEX TOKEN ENHANCED] Generated HTML', {
+      result,
+      length: result.length
+    });
+
+    return result;
+  }
+
+  /**
+   * Determine if we should use dark overlay for better contrast
+   */
+  shouldUseDarkOverlay(syntaxClasses) {
+    // Light-colored token types that need dark overlay for better visibility
+    const lightTokenTypes = [
+      'string', 'attr-value', 'template-string', 'regex',
+      'comment', 'prolog', 'doctype', 'cdata',
+      'punctuation', 'namespace', 'tag', 'attr-name',
+      'deleted', 'inserted'
+    ];
+
+    return syntaxClasses.some(cls => lightTokenTypes.includes(cls));
   }
 
   /**
@@ -372,7 +442,16 @@ class ComplexVimToken extends VimToken {
         const escapedChar = this.escapeHtml(char);
 
         if (charPos === cursorPosition && cursorApplied && !cursorApplied.applied) {
-          result += `<span class="${cursorClass}">${escapedChar}</span>`;
+          // Use enhanced cursor rendering for normal mode cursor in nested structures too
+          if (cursorClass === 'cursor' && char && char.length === 1) {
+            console.log('🎨 [NESTED STRUCTURE] Using enhanced cursor rendering', {
+              char,
+              currentStructureType: structure
+            });
+            result += this.renderEnhancedCursorForComplexToken(escapedChar, ['token']);
+          } else {
+            result += `<span class="${cursorClass}">${escapedChar}</span>`;
+          }
           cursorApplied.applied = true; // Mark cursor as applied
         } else {
           result += escapedChar;

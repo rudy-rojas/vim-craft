@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Option B Test - Enhanced Cursor Consistency</title>
+    <link rel="stylesheet" href="vendor/prism/themes/prism-tomorrow.css">
+    <link rel="stylesheet" href="css/ui-theme.css">
+    <link rel="stylesheet" href="css/vim-simulation.css">
+    <style>
+        body { padding: 20px; background: #1e1e1e; color: #fff; }
+        .test-container { margin: 20px 0; padding: 15px; border: 1px solid #444; background: #2d2d2d; }
+        .code-sample { margin: 10px 0; }
+        h2 { color: #4caf50; }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .before, .after { padding: 15px; border: 1px solid #666; }
+        .before { background: #4a1a1a; }
+        .after { background: #1a4a1a; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Final Option B Test: Enhanced Cursor Consistency</h1>
+
+    <div class="test-container">
+        <h2>📋 Test Summary</h2>
+        <p><strong>Objective:</strong> Verify that enhanced cursor now works consistently across ALL token types</p>
+        <p><strong>Before Option B:</strong> Enhanced cursor only worked for simple tokens, complex tokens used fallback</p>
+        <p><strong>After Option B:</strong> Enhanced cursor should work for both simple AND complex tokens</p>
+    </div>
+
+    <div class="test-container">
+        <h2>🧪 Live Test - JavaScript Complex Tokens</h2>
+        <p>The cursor should show enhanced overlay effect on ALL highlighted characters below:</p>
+
+        <div class="code-sample">
+            <label for="js-code">JavaScript Code with Complex Tokens:</label>
+            <textarea id="js-code" rows="6" style="width: 100%; font-family: monospace;">function processData(input) {
+    const result = input.map(item => {
+        return item.property?.method() || 'default';
+    });
+    return result;
+}</textarea>
+        </div>
+
+        <div class="code-sample">
+            <label for="cursor-pos">Cursor Position:</label>
+            <input type="range" id="cursor-pos" min="0" max="150" value="10" style="width: 100%;">
+            <span id="cursor-value">10</span>
+        </div>
+
+        <div id="rendered-output" style="border: 1px solid #666; padding: 15px; background: #000; font-family: monospace; white-space: pre-wrap; line-height: 1.4;"></div>
+
+        <div id="debug-info" style="margin-top: 15px; padding: 10px; background: #333; font-size: 12px; white-space: pre-wrap;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>📊 Results Analysis</h2>
+        <div id="analysis-results"></div>
+    </div>
+
+    <script type="module">
+        import { NeovimModeSimulator } from './js/neovim-simulator.js';
+
+        const codeTextarea = document.getElementById('js-code');
+        const cursorSlider = document.getElementById('cursor-pos');
+        const cursorValue = document.getElementById('cursor-value');
+        const renderedOutput = document.getElementById('rendered-output');
+        const debugInfo = document.getElementById('debug-info');
+        const analysisResults = document.getElementById('analysis-results');
+
+        const simulator = new NeovimModeSimulator();
+
+        // Capture console logs for analysis
+        let debugLogs = [];
+        const originalLog = console.log;
+        console.log = (...args) => {
+            debugLogs.push(args);
+            originalLog(...args);
+        };
+
+        function updateCursor() {
+            const code = codeTextarea.value;
+            const cursorPos = parseInt(cursorSlider.value);
+
+            // Update display
+            cursorValue.textContent = cursorPos;
+
+            // Clear previous logs
+            debugLogs = [];
+
+            try {
+                // Simulate with normal mode cursor
+                const result = simulator.simulate(code, 'normal', cursorPos, cursorPos, 'javascript');
+
+                // Display rendered result
+                renderedOutput.innerHTML = result;
+
+                // Analyze results
+                const hasEnhancedCursor = result.includes('cursor-overlay');
+                const hasComplexTokenLogs = debugLogs.some(log =>
+                    log.some(arg =>
+                        typeof arg === 'string' &&
+                        (arg.includes('[COMPLEX TOKEN ENHANCED]') || arg.includes('[COMPLEX TOKEN]'))
+                    )
+                );
+
+                const enhancedCursorCount = (result.match(/cursor-overlay/g) || []).length;
+                const fallbackCursorCount = (result.match(/class="[^"]*cursor[^"]*"/g) || [])
+                    .filter(match => !match.includes('cursor-overlay')).length;
+
+                // Update analysis
+                analysisResults.innerHTML = `
+                    <div style="color: ${hasEnhancedCursor ? '#4caf50' : '#f44336'};">
+                        <h3>${hasEnhancedCursor ? '✅' : '❌'} Enhanced Cursor Status</h3>
+                        <p><strong>Enhanced Cursors Found:</strong> ${enhancedCursorCount}</p>
+                        <p><strong>Fallback Cursors Found:</strong> ${fallbackCursorCount}</p>
+                        <p><strong>Complex Token Enhanced:</strong> ${hasComplexTokenLogs ? 'Yes' : 'No'}</p>
+                        <p><strong>Character at Position:</strong> "${code.charAt(cursorPos) || 'END'}"</p>
+                        <p><strong>Option B Working:</strong> ${hasEnhancedCursor && enhancedCursorCount > 0 ? 'YES ✅' : 'NO ❌'}</p>
+                    </div>
+                `;
+
+                // Show debug info
+                const relevantLogs = debugLogs.filter(log =>
+                    log.some(arg =>
+                        typeof arg === 'string' &&
+                        (arg.includes('ENHANCED') || arg.includes('COMPLEX TOKEN') || arg.includes('cursor'))
+                    )
+                ).slice(-5); // Show last 5 relevant logs
+
+                debugInfo.textContent = 'Recent Debug Logs:\\n' +
+                    relevantLogs.map(log =>
+                        log.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ')
+                    ).join('\\n\\n');
+
+            } catch (error) {
+                renderedOutput.textContent = `Error: ${error.message}`;
+                analysisResults.innerHTML = `<div style="color: #f44336;"><h3>❌ Test Failed</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        // Event listeners
+        cursorSlider.addEventListener('input', updateCursor);
+        codeTextarea.addEventListener('input', () => {
+            cursorSlider.max = codeTextarea.value.length;
+            updateCursor();
+        });
+
+        // Initial update
+        cursorSlider.max = codeTextarea.value.length;
+        updateCursor();
+
+        // Restore console
+        setTimeout(() => {
+            console.log = originalLog;
+        }, 1000);
+
+        console.log('🎯 Final Option B Test Ready!');
+        console.log('📝 Move the cursor slider to test enhanced cursor on different token types');
+    </script>
+</body>
+</html>
