@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vim Craft- Interactive Mode Converter</title>
     <link rel="stylesheet" href="./css/gruvbox-styles.css" />
-    <link rel="stylesheet" href="./vendor/prism/themes/prism-match-braces.css" />
     <style>
       #debug-log {
         position: fixed;
@@ -86,21 +85,12 @@
             id="source-code"
             class="form-control"
             rows="10"
-            placeholder="Enter your source code here...">// Test JSX/HTML tag coloring with rainbow brackets
+            placeholder="Enter your source code here...">function greet(name: string): string {
+  return `Hello, ${name}!`;
+}
 
-function TestComponent(props) {
-  const [state, setState] = useState(0);
-  
-  return (
-    <div className="container">
-      <h1>Title</h1>
-      <p>Text with {variable} and (parentheses) and [arrays] and {objects}</p>
-      <button onClick={() => handleClick(state, [1, 2, 3])}>
-        Click me
-      </button>
-    </div>
-  );
-}</textarea>
+const message = greet("World");
+console.log(message);</textarea>
           <div class="selection-info">
             <span id="selection-text">No text selected</span>
           </div>
@@ -118,11 +108,9 @@ function TestComponent(props) {
             <button id="copy-preview-btn" class="copy-button">Copy</button>
           </div>
           <div class="editor-panel">
-            <pre class="rainbow-braces" data-prism-match-braces data-prism-brace-hover data-prism-brace-select>
-              <code class="code-block" id="preview-output">
-                <div class="placeholder">Your converted code will appear here...</div>
-              </code>
-            </pre>
+            <div class="code-block" id="preview-output">
+              <div class="placeholder">Your converted code will appear here...</div>
+            </div>
             <div class="status-bar" id="status-bar">-- NORMAL --</div>
           </div>
         </div>

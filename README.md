@@ -8,10 +8,8 @@ A web-based tool that simulates Neovim's visual modes and syntax highlighting fo
 
 ## ✨ Features
 
-- **Multi-language syntax highlighting**: JavaScript, TypeScript, JSX, TSX, Python, CSS, HTML, Java, Swift
+- **Multi-language syntax highlighting**: JavaScript, Python, CSS, HTML, Java, Swift
 - **Neovim mode simulation**: Normal, Insert, and Visual modes
-- **Rainbow brackets**: Color-coded matching brackets with hover effects
-- **Match-braces functionality**: Hover over brackets to highlight matching pairs
 - **Real-time preview**: See how your code would look in Neovim
 - **Copy HTML output**: Get the generated HTML for your projects
 
@@ -36,32 +34,11 @@ A web-based tool that simulates Neovim's visual modes and syntax highlighting fo
 }
 ```
 
-## 🎨 Using VimCraft Output Externally
-
-To use the generated HTML in your own projects, you'll need these CSS files:
-
-### Required Files
-<!-- - `css/gruvbox-styles.css` - Base Gruvbox theme and Neovim styling -->
-- `path/to/prism-tomorrow.css` - Syntax highlighting theme
-- `path/to/prism-match-braces.css` - Bracket matching styles
-- `path/to/vim-craft-essential.css` - VimCraft-specific enhancements
-
-### Integration Example
+**Output (Visual Mode with "display: flex;" selected):**
 ```html
-<!DOCTYPE html>
-<html>
-<head>
-    <!-- <link rel="stylesheet" href="css/gruvbox-styles.css"> -->
-    <link rel="stylesheet" href="vendor/prism/themes/prism-tomorrow.css">
-    <link rel="stylesheet" href="vendor/prism/themes/prism-match-braces.css">
-    <link rel="stylesheet" href="vim-craft-essential.css">
-</head>
-<body>
-    <pre>
-        <code>
-            <!-- Your VimCraft generated HTML here -->
-        </code>
-    </pre>
-</body>
-</html>
+.container {
+    <span class="visual-selection"><span class="css-property">display</span><span class="js-operator">:</span> <span class="css-value">flex</span><span class="js-operator">;</span></span>
+    gap: 20px;
+}
+<div class="status-bar-ide">-- VISUAL --</div>
 ```

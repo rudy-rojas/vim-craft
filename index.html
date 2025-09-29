@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vim Craft- Interactive Mode Converter</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>" />
     <link rel="stylesheet" href="./css/gruvbox-styles.css" />
-    <link rel="stylesheet" href="./vendor/prism/themes/prism-match-braces.css" />
   </head>
   <body>
     <div class="container">
@@ -16,13 +16,13 @@
         <div class="form-group">
           <label for="language-select">Language:</label>
           <select id="language-select" class="form-control">
-            <option value="html">HTML</option>
-            <option value="javascript">JavaScript</option>
+            <option value="markup">HTML</option>
+            <option value="javascript" selected>JavaScript</option>
             <option value="typescript">TypeScript</option>
             <option value="python">Python</option>
             <option value="java">Java</option>
             <option value="swift">Swift</option>
-            <option value="css"selected>CSS</option>
+            <option value="css">CSS</option>
           </select>
         </div>
 
@@ -30,7 +30,7 @@
           <label for="mode-select">Vim Mode:</label>
           <select id="mode-select" class="form-control">
             <option value="normal">Normal</option>
-            <option value="insert" selected>Insert</option>
+            <option value="insert">Insert</option>
             <option value="visual">Visual</option>
           </select>
         </div>
@@ -59,11 +59,9 @@
             <button id="copy-preview-btn" class="copy-button">Copy</button>
           </div>
           <div class="editor-panel">
-            <pre class="rainbow-braces" data-prism-match-braces data-prism-brace-hover data-prism-brace-select>
-              <code class="code-block" id="preview-output">
-                <div class="placeholder">Your converted code will appear here...</div>
-              </code>
-            </pre>
+            <div class="code-block" id="preview-output">
+              <div class="placeholder">Your converted code will appear here...</div>
+            </div>
             <div class="status-bar" id="status-bar">-- NORMAL --</div>
           </div>
         </div>
@@ -81,17 +79,6 @@
     </div>
 
     <div></div>
-    <!-- Load Prism.js and plugins in dependency order -->
-    <script src="./vendor/prism/prism-core.js"></script>
-    <!-- TypeScript extends JavaScript (already in core) -->
-    <script src="./vendor/prism/components/prism-typescript.js"></script>
-    <!-- JSX extends JavaScript and markup (both in core) -->
-    <script src="./vendor/prism/components/prism-jsx.js"></script>
-    <!-- TSX extends TypeScript and JSX -->
-    <script src="./vendor/prism/components/prism-tsx.js"></script>
-    <!-- Load the match-braces plugin -->
-    <script src="./vendor/prism/plugins/prism-match-braces.js"></script>
-    
     <!-- Load the main application as an ES module -->
     <script type="module" src="./js/neovim-handler.js"></script>
   </body>

@@ -76,23 +76,54 @@ class NeovimHandler {
   }
 
   async handleConvert() {
-    console.log('=== handleConvert started ===');
-    
+    console.group('🔧 [VIMCRAFT DEBUG] === SESSION START ===');
+    console.log('⏰ Timestamp:', new Date().toISOString());
+
     const sourceCode = this.sourceCodeTextarea.value;
     const language = this.languageSelect.value;
     const mode = this.modeSelect.value;
-
-    console.log('Input values:', { sourceCode: sourceCode.length + ' chars', language, mode });
-
-    if (!sourceCode.trim()) {
-      alert('Please enter some source code');
-      return;
-    }
-
     const start = this.sourceCodeTextarea.selectionStart;
     const end = this.sourceCodeTextarea.selectionEnd;
 
-    console.log('Selection:', { start, end });
+    // === DEBUG ENTRADA ===
+    console.group('📝 [DEBUG ENTRADA] Input Analysis');
+    console.log('🌐 Language selected:', language);
+    console.log('🎯 Vim mode selected:', mode);
+    console.log('📏 Source code length:', sourceCode.length, 'chars');
+    console.log('📍 Selection positions:', { start, end });
+    console.log('🔤 Source code preview (first 100 chars):', JSON.stringify(sourceCode.substring(0, 100)));
+    if (sourceCode.length > 100) {
+      console.log('🔤 Source code preview (last 50 chars):', JSON.stringify(sourceCode.substring(sourceCode.length - 50)));
+    }
+
+    // Análisis específico por modo
+    if (mode === 'visual') {
+      const selectedText = sourceCode.substring(start, end);
+      console.log('✂️ Visual mode - Selected text:', JSON.stringify(selectedText));
+      console.log('✂️ Visual mode - Selection length:', selectedText.length);
+      if (start === end) {
+        console.warn('⚠️ Visual mode selected but no text selected (start === end)');
+      }
+    } else if (mode === 'insert') {
+      console.log('📝 Insert mode - Cursor at position:', start);
+      if (start !== end) {
+        console.warn('⚠️ Insert mode but text is selected (start !== end)');
+      }
+    } else if (mode === 'normal') {
+      console.log('⚡ Normal mode - Cursor at position:', start);
+      if (start !== end) {
+        console.warn('⚠️ Normal mode but text is selected (start !== end) - will clear after processing');
+        // Note: We'll clear the selection after vim processing to avoid interfering with cursor placement
+      }
+    }
+    console.groupEnd();
+
+    if (!sourceCode.trim()) {
+      console.warn('❌ Empty source code - aborting');
+      console.groupEnd();
+      alert('Please enter some source code');
+      return;
+    }
 
     try {
       // Initialize simulator if not already done or if language changed
@@ -116,17 +147,36 @@ class NeovimHandler {
       console.log('Validation passed');
 
       // Process the code using the Neovim simulator
-      console.log('Processing code...');
+      console.log('🔄 Processing code with Neovim simulator...');
       const result = this.neovimSimulator.processCode(sourceCode, mode, start, end);
-      console.log('Code processed, result length:', result.length);
-      
+
+      // === DEBUG RESULTADO ===
+      console.group('🎯 [DEBUG RESULTADO] Final Output');
+      console.log('📊 Result HTML length:', result.length, 'chars');
+      console.log('🔍 Result preview (first 200 chars):', result.substring(0, 200));
+      if (result.length > 200) {
+        console.log('🔍 Result preview (last 100 chars):', result.substring(result.length - 100));
+      }
+      console.groupEnd();
+
       this.displayResults(result);
-      console.log('=== handleConvert completed successfully ===');
+
+      // Clear selection in normal mode after processing (to avoid interfering with cursor placement)
+      if (mode === 'normal' && start !== end) {
+        this.sourceCodeTextarea.setSelectionRange(start, start);
+        console.log('🧹 Selection cleared after processing');
+      }
+
+      console.log('✅ Session completed successfully');
+      console.groupEnd(); // Close main session group
     } catch (error) {
-      console.error('=== Error in handleConvert ===');
-      console.error('Error processing code:', error);
-      console.error('Stack trace:', error.stack);
-      alert('Error processing code. Please check your input.');
+      console.group('❌ [DEBUG ERROR] Session Failed');
+      console.error('💥 Error in handleConvert:', error.message);
+      console.error('📍 Error stack:', error.stack);
+      console.error('🔧 Debug info - Language:', language, 'Mode:', mode, 'Positions:', { start, end });
+      console.groupEnd(); // Close error group
+      console.groupEnd(); // Close main session group
+      alert('Error processing code. Please check your input and console for details.');
     }
   }
 
@@ -169,15 +219,6 @@ class NeovimHandler {
     // Clear any placeholder content first
     this.previewOutput.innerHTML = '';
     
-    // Get the parent pre element for Prism plugin configuration
-    const preElement = this.previewOutput.parentElement;
-    if (preElement && preElement.tagName === 'PRE') {
-      preElement.classList.add('rainbow-braces');
-      preElement.setAttribute('data-prism-match-braces', '');
-      preElement.setAttribute('data-prism-brace-hover', '');
-      preElement.setAttribute('data-prism-brace-select', '');
-    }
-    
     // Display in preview (with styling) - preserve all whitespace and line breaks
     this.previewOutput.style.whiteSpace = 'pre-wrap';
     this.previewOutput.style.fontFamily = 'inherit';
@@ -187,170 +228,8 @@ class NeovimHandler {
     this.previewOutput.style.color = '#ebdbb2';
     this.previewOutput.innerHTML = processedCode;
 
-    // Try alternative approach: use Prism directly for match-braces
-    this.initializePrismMatchBraces();
-
     // Display in source (raw HTML)
     this.sourceOutput.querySelector('code').textContent = processedCode;
-  }
-
-  initializePrismMatchBraces() {
-    const preElement = this.previewOutput.parentElement;
-    
-    if (!window.Prism || !preElement) {
-      console.warn('Prism or preElement not available for match-braces');
-      return;
-    }
-
-    console.log('Initializing Prism match-braces with alternative approach...');
-    
-    // Method 1: Try to trigger the complete hook directly
-    setTimeout(() => {
-      try {
-        const event = {
-          element: this.previewOutput,
-          language: 'jsx',
-          grammar: window.Prism.languages.jsx || window.Prism.languages.javascript,
-          code: this.previewOutput.textContent
-        };
-        
-        console.log('Triggering Prism complete hook for match-braces...');
-        window.Prism.hooks.run('complete', event);
-        
-        // Method 2: If that doesn't work, try to manually process the tokens
-        this.manuallyInitializeMatchBraces();
-        
-      } catch (error) {
-        console.error('Error initializing match-braces:', error);
-      }
-    }, 200);
-  }
-
-  manuallyInitializeMatchBraces() {
-    console.log('Attempting manual match-braces initialization...');
-    
-    const preElement = this.previewOutput.parentElement;
-    const punctuationTokens = this.previewOutput.querySelectorAll('.token.punctuation');
-    
-    console.log(`Found ${punctuationTokens.length} punctuation tokens`);
-    
-    // Add necessary classes and IDs for brace matching
-    const bracketMap = { '(': ')', '[': ']', '{': '}' };
-    const openBrackets = Object.keys(bracketMap);
-    const closeBrackets = Object.values(bracketMap);
-    const bracketStack = [];
-    let pairId = 0;
-
-    punctuationTokens.forEach((token, index) => {
-      const text = token.textContent.trim();
-      
-      // Skip JSX tags
-      if (text === '<' || text === '>') return;
-      
-      if (openBrackets.includes(text)) {
-        // Opening bracket
-        const currentPairId = `pair-${pairId++}-`;
-        token.id = currentPairId + 'open';
-        bracketStack.push({ token, text, pairId: currentPairId, closingBracket: bracketMap[text] });
-        
-        // Add event listeners
-        this.addBraceEventListeners(token);
-        
-      } else if (closeBrackets.includes(text)) {
-        // Closing bracket - find matching opening bracket
-        for (let i = bracketStack.length - 1; i >= 0; i--) {
-          if (bracketStack[i].closingBracket === text) {
-            const openToken = bracketStack[i];
-            token.id = openToken.pairId + 'close';
-            bracketStack.splice(i, 1);
-            
-            // Add event listeners
-            this.addBraceEventListeners(token);
-            break;
-          }
-        }
-      }
-    });
-    
-    console.log('Manual match-braces initialization completed');
-  }
-
-  addBraceEventListeners(token) {
-    const getMatchingBrace = (element) => {
-      const id = element.id;
-      if (!id) return null;
-      
-      const match = id.match(/^(pair-\d+-)(open|close)$/);
-      if (!match) return null;
-      
-      const [, pairId, type] = match;
-      const oppositeType = type === 'open' ? 'close' : 'open';
-      const matchingId = pairId + oppositeType;
-      
-      return document.getElementById(matchingId);
-    };
-
-    const applyHoverStyle = (element, isHover) => {
-      if (isHover) {
-        element.classList.add('brace-hover');
-        
-        // Get the computed color of the element
-        const computedStyle = window.getComputedStyle(element);
-        const color = computedStyle.color;
-        
-        // Apply a subtle background with the same color at low opacity
-        const rgb = color.match(/\d+/g);
-        if (rgb && rgb.length >= 3) {
-          const bgColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.15)`;
-          element.style.backgroundColor = bgColor;
-        }
-      } else {
-        element.classList.remove('brace-hover');
-        element.style.backgroundColor = '';
-      }
-    };
-
-    // Hover events
-    token.addEventListener('mouseenter', () => {
-      const matching = getMatchingBrace(token);
-      if (matching) {
-        applyHoverStyle(token, true);
-        applyHoverStyle(matching, true);
-      }
-    });
-
-    token.addEventListener('mouseleave', () => {
-      const matching = getMatchingBrace(token);
-      if (matching) {
-        applyHoverStyle(token, false);
-        applyHoverStyle(matching, false);
-      }
-    });
-
-    // Click events
-    token.addEventListener('click', () => {
-      // Clear previous selections
-      document.querySelectorAll('.brace-selected').forEach(el => {
-        el.classList.remove('brace-selected');
-        el.style.backgroundColor = '';
-      });
-      
-      const matching = getMatchingBrace(token);
-      if (matching) {
-        token.classList.add('brace-selected');
-        matching.classList.add('brace-selected');
-        
-        // Apply stronger background for selection
-        const computedStyle = window.getComputedStyle(token);
-        const color = computedStyle.color;
-        const rgb = color.match(/\d+/g);
-        if (rgb && rgb.length >= 3) {
-          const bgColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.25)`;
-          token.style.backgroundColor = bgColor;
-          matching.style.backgroundColor = bgColor;
-        }
-      }
-    });
   }
 
   copyToClipboard() {
@@ -392,12 +271,27 @@ class NeovimHandler {
   fallbackCopy(text) {
     const textArea = document.createElement('textarea');
     textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
     document.body.appendChild(textArea);
+    textArea.focus();
     textArea.select();
 
     try {
-      document.execCommand('copy');
-      this.showCopyFeedback();
+      const successful = document.execCommand('copy');
+      if (successful) {
+        this.showCopyFeedback();
+      } else {
+        throw new Error('execCommand returned false');
+      }
     } catch (err) {
       console.error('Fallback copy failed: ', err);
       alert('Copy failed. Please select and copy manually.');

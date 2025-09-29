@@ -178,12 +178,6 @@ textarea.form-control {
   border-radius: 0 0 6px 6px;
 }
 
-.editor-panel pre {
-  margin: 0;
-  background: var(--bg0);
-  border-radius: 0 0 6px 6px;
-}
-
 .code-block {
   background: var(--bg0-hard);
   padding: 16px;
@@ -193,13 +187,6 @@ textarea.form-control {
   position: relative;
   border-radius: 5px;
   color: #ebdbb2;
-  /* Enable rainbow braces */
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
-  display: block;
-  margin: 0;
 }
 
 .placeholder {
@@ -352,15 +339,15 @@ textarea.form-control {
    ======================================== */
 
 /* Base token styles - Tomorrow Night theme integration */
-/* .token {
-  color: #ccc;
-} */
+.token {
+  /* color: #ccc; */
+}
 
 /* Keywords */
 .token.keyword,
 .token.builtin {
   color: #cc99cd;
-  font-weight: bold;
+  /* font-weight: bold; */
 }
 
 /* Strings */
@@ -388,10 +375,7 @@ textarea.form-control {
 }
 
 /* Operators and punctuation */
-.token.operator {
-  color: #67cdcc;
-}
-
+.token.operator,
 .token.punctuation {
   color: #ccc;
 }
@@ -435,25 +419,73 @@ textarea.form-control {
   color: #67cdcc;
 }
 
-/* JSX/HTML tags should keep their original colors and override rainbow brackets */
-.token.tag,
-.token.attr-name,
-.token.namespace,
-.token.deleted {
-  color: #e2777a !important;
+/* ========================================
+   CSS SPECIFIC TOKENS
+   ======================================== */
+
+/* CSS Properties */
+.token.property {
+  color: #6196cc;
 }
 
-/* JSX tag punctuation (< >) should keep original color */
-.token.tag .token.punctuation,
-.token.punctuation.tag {
-  color: #e2777a !important;
+/* CSS Values */
+.token.value {
+  color: #7ec699;
 }
 
-/* Ensure JSX tags are never overridden by rainbow brackets */
-.rainbow-braces .token.tag,
-.rainbow-braces .token.tag .token.punctuation,
-.rainbow-braces .token.punctuation.tag {
-  color: #e2777a !important;
+/* CSS At-rules (@media, @import, etc.) */
+.token.atrule {
+  color: #cc99cd;
+  /* font-weight: bold; */ /* no aplicar bold */
+}
+
+/* CSS Selectors */
+.token.selector {
+  color: #f8c555;
+}
+
+/* CSS Units and Important */
+.token.important {
+  /* color: #e2777a; */
+  /* font-weight: bold; */
+}
+
+/* ========================================
+   HTML SPECIFIC TOKENS
+   ======================================== */
+
+/* HTML Tags */
+.token.tag .token.tag {
+  /* color: #e2777a;  No aplicar*/
+}
+
+.token.tag .token.punctuation {
+  /* color: #e2777a; */
+}
+
+/* HTML Attributes */
+.token.attr-name {
+  color: #f8c555;
+}
+
+/* HTML Attribute Values */
+.token.attr-value {
+  color: #7ec699;
+}
+
+.token.attr-value .token.punctuation {
+  /* color: #7ec699; */
+}
+
+/* HTML Entities */
+.token.entity {
+  color: #67cdcc;
+}
+
+/* HTML Doctype */
+.token.doctype {
+  color: #999;
+  font-style: italic;
 }
 
 /* ========================================
@@ -509,12 +541,12 @@ textarea.form-control {
 .visual-selection.token.constant,
 .visual-selection.token.symbol {
   color: #f8c555 !important;
-  background: rgba(248, 197, 85, 0.25) !important;
+  /* background: rgba(248, 197, 85, 0.25) !important; no aplicar!!*/
 }
 
 .visual-selection.token.boolean {
   color: #f08d49 !important;
-  background: rgba(240, 141, 73, 0.25) !important;
+  /* background: rgba(240, 141, 73, 0.25) !important; no aplicar */
 }
 
 .visual-selection.token.tag,
@@ -529,67 +561,13 @@ textarea.form-control {
 .visual-selection.token.important,
 .visual-selection.token.atrule {
   color: #cc99cd !important;
-  background: rgba(204, 153, 205, 0.25) !important;
+  /* background: rgba(204, 153, 205, 0.25) !important; */
 }
 
-.visual-selection.token.operator {
-  color: #67cdcc !important;
-  background: rgba(103, 205, 204, 0.25) !important;
-}
-
+.visual-selection.token.operator,
 .visual-selection.token.punctuation {
   color: #ccc !important;
-  background: rgba(204, 204, 204, 0.25) !important;
-}
-
-/* Rainbow brackets during visual selection - preserve rainbow colors */
-.visual-selection.token.punctuation.brace-level-1 {
-  color: #E50 !important;
-  background: rgba(238, 85, 0, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-2 {
-  color: #0B3 !important;
-  background: rgba(0, 187, 51, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-3 {
-  color: #26F !important;
-  background: rgba(34, 102, 255, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-4 {
-  color: #E0E !important;
-  background: rgba(238, 0, 238, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-5 {
-  color: #E50 !important;
-  background: rgba(238, 85, 0, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-6 {
-  color: #0B3 !important;
-  background: rgba(0, 187, 51, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-7 {
-  color: #26F !important;
-  background: rgba(34, 102, 255, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-8 {
-  color: #E0E !important;
-  background: rgba(238, 0, 238, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-9 {
-  color: #E50 !important;
-  background: rgba(238, 85, 0, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-10 {
-  color: #0B3 !important;
-  background: rgba(0, 187, 51, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-11 {
-  color: #26F !important;
-  background: rgba(34, 102, 255, 0.25) !important;
-}
-.visual-selection.token.punctuation.brace-level-12 {
-  color: #E0E !important;
-  background: rgba(238, 0, 238, 0.25) !important;
+  /* background: rgba(204, 204, 204, 0.25) !important; */
 }
 
 .visual-selection.token.entity,
@@ -598,19 +576,10 @@ textarea.form-control {
   background: rgba(103, 205, 204, 0.25) !important;
 }
 
-/* JSX tag punctuation during selection - override rainbow brackets */
-.visual-selection.token.tag .token.punctuation,
-.visual-selection.token.punctuation.tag {
-  color: #e2777a !important;
-  background: rgba(226, 119, 122, 0.25) !important;
-}
-
-/* Ensure JSX tags during selection are never overridden by rainbow brackets */
-.rainbow-braces .visual-selection.token.tag,
-.rainbow-braces .visual-selection.token.tag .token.punctuation,
-.rainbow-braces .visual-selection.token.punctuation.tag {
-  color: #e2777a !important;
-  background: rgba(226, 119, 122, 0.25) !important;
+/* Additional CSS-specific tokens for visual selection */
+.visual-selection.token.value {
+  color: #7ec699 !important;
+  background: rgba(126, 198, 153, 0.25) !important;
 }
 
 /* ========================================
@@ -680,83 +649,20 @@ textarea.form-control {
   color: #2d2d2d !important;
 }
 
-.visual-block-cursor.token.operator {
-  background-color: #67cdcc !important;
-  color: #2d2d2d !important;
-}
-
+.visual-block-cursor.token.operator,
 .visual-block-cursor.token.punctuation {
   background-color: #ccc !important;
-  color: #2d2d2d !important;
-}
-
-/* Rainbow brackets during visual block cursor - preserve rainbow colors */
-.visual-block-cursor.token.punctuation.brace-level-1 {
-  background-color: #E50 !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-2 {
-  background-color: #0B3 !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-3 {
-  background-color: #26F !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-4 {
-  background-color: #E0E !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-5 {
-  background-color: #E50 !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-6 {
-  background-color: #0B3 !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-7 {
-  background-color: #26F !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-8 {
-  background-color: #E0E !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-9 {
-  background-color: #E50 !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-10 {
-  background-color: #0B3 !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-11 {
-  background-color: #26F !important;
-  color: #2d2d2d !important;
-}
-.visual-block-cursor.token.punctuation.brace-level-12 {
-  background-color: #E0E !important;
-  color: #2d2d2d !important;
-}
-
-/* JSX tag punctuation during visual block cursor - override rainbow brackets */
-.visual-block-cursor.token.tag .token.punctuation,
-.visual-block-cursor.token.punctuation.tag {
-  background-color: #e2777a !important;
-  color: #2d2d2d !important;
-}
-
-/* Ensure JSX tags during visual block cursor are never overridden by rainbow brackets */
-.rainbow-braces .visual-block-cursor.token.tag,
-.rainbow-braces .visual-block-cursor.token.tag .token.punctuation,
-.rainbow-braces .visual-block-cursor.token.punctuation.tag {
-  background-color: #e2777a !important;
   color: #2d2d2d !important;
 }
 
 .visual-block-cursor.token.entity,
 .visual-block-cursor.token.url {
   background-color: #67cdcc !important;
+  color: #2d2d2d !important;
+}
+
+/* Additional CSS-specific tokens for visual block cursor */
+.visual-block-cursor.token.value {
+  background-color: #7ec699 !important;
   color: #2d2d2d !important;
 }
