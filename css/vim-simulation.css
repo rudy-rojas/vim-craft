@@ -1,0 +1,272 @@
+/* ========================================
+   VIM SIMULATION STYLES
+   Custom styles for simulating Vim modes and behaviors
+   ======================================== */
+
+/* Cursor styles */
+.cursor {
+  background: var(--fg0);
+  color: var(--bg0-hard);
+  animation: blink 1s infinite;
+  position: relative;
+}
+
+.cursor-insert {
+  position: relative;
+}
+
+.cursor-insert::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--fg0);
+  animation: blink 1s infinite;
+  z-index: 1;
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0.3;
+  }
+}
+
+/* Visual selection */
+.visual-selection {
+  background: rgba(131, 165, 152, 0.3);
+  position: relative;
+  padding-top: 2px;
+  padding-bottom: 3px;
+}
+
+/* Visual block cursor - cursor de bloque animado para modo Visual */
+.visual-block-cursor {
+  color: var(--bg0-hard) !important;
+  display: inline-block;
+  position: relative;
+  background: transparent;
+  z-index: 10;
+}
+
+.visual-block-cursor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  background-color: #fbf1c7;
+  animation: cursor-width 1s infinite steps(1, end);
+  transform-origin: left center;
+  z-index: -1;
+}
+
+@keyframes cursor-width {
+  0% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.85);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.status-bar-ide {
+  font-size: 10px;
+  background-color: #3c3836;
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  right: 0;
+  padding: 4px 16px;
+  border-top: 1px solid #504945;
+  color: #ebdbb2;
+}
+
+/* ========================================
+   VISUAL SELECTION WITH PRISM THEME COLORS PRESERVED
+   ======================================== */
+
+/* Base visual selection - only changes background, preserves text color */
+.visual-selection {
+  background: rgba(131, 165, 152, 0.3) !important;
+  position: relative;
+  padding-top: 2px;
+  padding-bottom: 3px;
+  /* Do NOT set color here - let Prism classes control text color */
+}
+
+/* Preserve Tomorrow Night theme colors during visual selection */
+.visual-selection.token.keyword,
+.visual-selection.token.builtin {
+  color: #cc99cd !important;
+  background: rgba(204, 153, 205, 0.25) !important;
+}
+
+.visual-selection.token.string,
+.visual-selection.token.char,
+.visual-selection.token.attr-value,
+.visual-selection.token.regex,
+.visual-selection.token.variable {
+  color: #7ec699 !important;
+  background: rgba(126, 198, 153, 0.25) !important;
+}
+
+.visual-selection.token.comment,
+.visual-selection.token.prolog,
+.visual-selection.token.doctype,
+.visual-selection.token.cdata {
+  color: #999 !important;
+  background: rgba(153, 153, 153, 0.25) !important;
+}
+
+.visual-selection.token.number,
+.visual-selection.token.function {
+  color: #f08d49 !important;
+  background: rgba(240, 141, 73, 0.25) !important;
+}
+
+.visual-selection.token.function-name {
+  color: #6196cc !important;
+  background: rgba(97, 150, 204, 0.25) !important;
+}
+
+.visual-selection.token.class-name,
+.visual-selection.token.property,
+.visual-selection.token.constant,
+.visual-selection.token.symbol {
+  color: #f8c555 !important;
+  /* background: rgba(248, 197, 85, 0.25) !important; no aplicar!!*/
+}
+
+.visual-selection.token.boolean {
+  color: #f08d49 !important;
+  /* background: rgba(240, 141, 73, 0.25) !important; no aplicar */
+}
+
+.visual-selection.token.tag,
+.visual-selection.token.attr-name,
+.visual-selection.token.namespace,
+.visual-selection.token.deleted {
+  color: #e2777a !important;
+  background: rgba(226, 119, 122, 0.25) !important;
+}
+
+.visual-selection.token.selector,
+.visual-selection.token.important,
+.visual-selection.token.atrule {
+  color: #cc99cd !important;
+  /* background: rgba(204, 153, 205, 0.25) !important; */
+}
+
+.visual-selection.token.operator,
+.visual-selection.token.punctuation {
+  color: #ccc !important;
+  /* background: rgba(204, 204, 204, 0.25) !important; */
+}
+
+.visual-selection.token.entity,
+.visual-selection.token.url {
+  color: #67cdcc !important;
+  background: rgba(103, 205, 204, 0.25) !important;
+}
+
+/* Additional CSS-specific tokens for visual selection */
+.visual-selection.token.value {
+  color: #7ec699 !important;
+  background: rgba(126, 198, 153, 0.25) !important;
+}
+
+/* ========================================
+   VISUAL BLOCK CURSOR WITH TOMORROW THEME COLORS
+   ======================================== */
+
+/* Visual block cursor - use Tomorrow Night colors as background */
+.visual-block-cursor.token.keyword,
+.visual-block-cursor.token.builtin {
+  background-color: #cc99cd !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.string,
+.visual-block-cursor.token.char,
+.visual-block-cursor.token.attr-value,
+.visual-block-cursor.token.regex,
+.visual-block-cursor.token.variable {
+  background-color: #7ec699 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.comment,
+.visual-block-cursor.token.prolog,
+.visual-block-cursor.token.doctype,
+.visual-block-cursor.token.cdata {
+  background-color: #999 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.number,
+.visual-block-cursor.token.function {
+  background-color: #f08d49 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.function-name {
+  background-color: #6196cc !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.class-name,
+.visual-block-cursor.token.property,
+.visual-block-cursor.token.constant,
+.visual-block-cursor.token.symbol {
+  background-color: #f8c555 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.boolean {
+  background-color: #f08d49 !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.tag,
+.visual-block-cursor.token.attr-name,
+.visual-block-cursor.token.namespace,
+.visual-block-cursor.token.deleted {
+  background-color: #e2777a !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.selector,
+.visual-block-cursor.token.important,
+.visual-block-cursor.token.atrule {
+  background-color: #cc99cd !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.operator,
+.visual-block-cursor.token.punctuation {
+  background-color: #ccc !important;
+  color: #2d2d2d !important;
+}
+
+.visual-block-cursor.token.entity,
+.visual-block-cursor.token.url {
+  background-color: #67cdcc !important;
+  color: #2d2d2d !important;
+}
+
+/* Additional CSS-specific tokens for visual block cursor */
+.visual-block-cursor.token.value {
+  background-color: #7ec699 !important;
+  color: #2d2d2d !important;
+}
