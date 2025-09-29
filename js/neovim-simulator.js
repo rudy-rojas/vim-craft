@@ -53,18 +53,293 @@ class VisualEffectsProcessor {
   }
 
   processNormalMode(tokens, selectionStart, selectionEnd) {
-    return this.applyCursor(tokens, selectionStart, 'cursor');
+    console.log('🎯 [NORMAL MODE] Processing with simple cursor logic');
+    return this.applySimpleCursor(tokens, selectionStart, 'cursor');
   }
 
   processInsertMode(tokens, selectionStart, selectionEnd) {
-    return this.applyCursor(tokens, selectionStart, 'cursor-insert');
+    console.log('🎯 [INSERT MODE] Processing with INSERT-specific cursor logic');
+    return this.applyInsertCursor(tokens, selectionStart, 'cursor-insert');
   }
 
   processVisualMode(tokens, selectionStart, selectionEnd) {
     return this.applySelection(tokens, selectionStart, selectionEnd);
   }
 
-  applyCursor(tokens, position, cursorClass) {
+  /**
+   * SIMPLE CURSOR APPLICATION - NEVER FAILS
+   * Objetivo: Poner cursor EN el carácter especificado
+   */
+  applySimpleCursor(tokens, position, cursorClass) {
+    console.log(`🎯 [SIMPLE CURSOR] Applying cursor at position ${position} with class ${cursorClass}`);
+
+    const result = [...tokens];
+
+    // Estrategia simple: buscar el token que contenga la posición
+    for (let i = 0; i < result.length; i++) {
+      const token = result[i];
+
+      // ¿La posición está dentro de este token?
+      if (token.start <= position && position < token.end) {
+        console.log(`✅ Found token ${i} containing position ${position}: "${token.value}" [${token.start}-${token.end}]`);
+
+        // Caso especial: Token complejo (Prism)
+        if (token.isComplex && typeof token.renderWithPartialCursor === 'function') {
+          console.log(`🔮 Using complex token cursor rendering`);
+          try {
+            const renderedHtml = token.renderWithPartialCursor(position, cursorClass);
+
+            // Marcar el token como pre-renderizado
+            token.preRenderedHtml = renderedHtml;
+            token.hasPartialCursor = true;
+            token.partialCursorPosition = position;
+            token.partialCursorClass = cursorClass;
+
+            console.log(`✅ Complex token cursor applied successfully`);
+            return result;
+          } catch (error) {
+            console.log(`⚠️ Complex token failed, falling back to simple split:`, error);
+            // Continúa con split simple
+          }
+        }
+
+        // Token simple: dividirlo en el punto del cursor
+        const newTokens = this.splitTokenSimple(token, position, cursorClass);
+        result.splice(i, 1, ...newTokens);
+        console.log(`✅ Token split into ${newTokens.length} parts with cursor`);
+        return result;
+      }
+    }
+
+    // Fallback: posición no encontrada en ningún token
+    console.log(`⚠️ Position ${position} not found in any token, creating standalone cursor`);
+    return this.createStandaloneCursor(result, position, cursorClass);
+  }
+
+  /**
+   * Divide un token simple en el punto del cursor
+   */
+  splitTokenSimple(token, position, cursorClass) {
+    const tokens = [];
+    const value = token.value || '';
+    const relativePos = position - token.start;
+
+    // Validación
+    if (relativePos < 0 || relativePos >= value.length) {
+      console.log(`⚠️ Invalid cursor position ${position} in token [${token.start}-${token.end}]`);
+      return [token]; // Devolver token original si la posición es inválida
+    }
+
+    // Parte ANTES del cursor
+    if (relativePos > 0) {
+      const beforePart = value.substring(0, relativePos);
+      const beforeToken = this.createToken(
+        token.type,
+        beforePart,
+        token.start,
+        token.start + relativePos,
+        token
+      );
+      tokens.push(beforeToken);
+      console.log(`📝 Before cursor: "${beforePart}"`);
+    }
+
+    // Carácter CON cursor
+    const cursorChar = value.charAt(relativePos);
+    const cursorToken = this.createToken(
+      token.type,
+      cursorChar,
+      position,
+      position + 1,
+      token
+    );
+    cursorToken.cursor = cursorClass; // Marcar con cursor
+    tokens.push(cursorToken);
+    console.log(`👆 Cursor on: "${cursorChar}"`);
+
+    // Parte DESPUÉS del cursor
+    if (relativePos < value.length - 1) {
+      const afterPart = value.substring(relativePos + 1);
+      const afterToken = this.createToken(
+        token.type,
+        afterPart,
+        position + 1,
+        token.end,
+        token
+      );
+      tokens.push(afterToken);
+      console.log(`📝 After cursor: "${afterPart}"`);
+    }
+
+    return tokens;
+  }
+
+  /**
+   * Crea un cursor independiente cuando no se encuentra en ningún token
+   */
+  createStandaloneCursor(result, position, cursorClass) {
+    // Encontrar dónde insertar el cursor
+    let insertIndex = 0;
+    for (let i = 0; i < result.length; i++) {
+      if (result[i].start > position) {
+        insertIndex = i;
+        break;
+      }
+      insertIndex = i + 1;
+    }
+
+    // Crear token de cursor vacío
+    const cursorToken = this.createToken('cursor', '', position, position);
+    cursorToken.cursor = cursorClass;
+    result.splice(insertIndex, 0, cursorToken);
+
+    console.log(`✅ Standalone cursor inserted at index ${insertIndex}`);
+    return result;
+  }
+
+  /**
+   * INSERT MODE CURSOR - Coloca el cursor ENTRE caracteres, no EN un carácter
+   * A diferencia del modo Normal, Insert mode muestra el cursor como una línea vertical
+   * entre caracteres, indicando dónde se insertará el próximo carácter
+   */
+  applyInsertCursor(tokens, position, cursorClass) {
+    console.log(`📝 [INSERT CURSOR] Applying INSERT cursor at position ${position} with class ${cursorClass}`);
+
+    const result = [...tokens];
+
+    // Buscar el token que contenga o preceda inmediatamente la posición
+    for (let i = 0; i < result.length; i++) {
+      const token = result[i];
+
+      // Caso 1: Posición está DENTRO del token (dividir el token)
+      if (token.start < position && position < token.end) {
+        console.log(`✂️ Position ${position} is INSIDE token ${i}: "${token.value}" [${token.start}-${token.end}]`);
+
+        // Caso especial: Token complejo (Prism) - para INSERT mode
+        if (token.isComplex && typeof token.renderWithPartialCursor === 'function') {
+          console.log(`🔮 Using complex token INSERT cursor rendering`);
+          try {
+            // Para INSERT mode, necesitamos renderizar con un cursor especial entre caracteres
+            const renderedHtml = token.renderWithPartialCursor(position, cursorClass);
+
+            // Marcar el token como pre-renderizado para INSERT
+            token.preRenderedHtml = renderedHtml;
+            token.hasPartialCursor = true;
+            token.partialCursorPosition = position;
+            token.partialCursorClass = cursorClass;
+
+            console.log(`✅ Complex token INSERT cursor applied successfully`);
+            return result;
+          } catch (error) {
+            console.log(`⚠️ Complex INSERT token failed, falling back to simple split:`, error);
+            // Continúa con split simple
+          }
+        }
+
+        const newTokens = this.splitTokenForInsert(token, position, cursorClass);
+        result.splice(i, 1, ...newTokens);
+        console.log(`✅ Token split for INSERT cursor`);
+        return result;
+      }
+
+      // Caso 2: Posición está al INICIO del token (insertar cursor antes)
+      if (position === token.start) {
+        console.log(`⬅️ Position ${position} is at START of token ${i}: "${token.value}" [${token.start}-${token.end}]`);
+        const cursorToken = this.createToken('cursor', '', position, position);
+        cursorToken.cursor = cursorClass;
+        result.splice(i, 0, cursorToken);
+        console.log(`✅ INSERT cursor placed before token`);
+        return result;
+      }
+
+      // Caso 3: Posición está al FINAL del token (insertar cursor después)
+      if (position === token.end) {
+        console.log(`➡️ Position ${position} is at END of token ${i}: "${token.value}" [${token.start}-${token.end}]`);
+        const cursorToken = this.createToken('cursor', '', position, position);
+        cursorToken.cursor = cursorClass;
+        result.splice(i + 1, 0, cursorToken);
+        console.log(`✅ INSERT cursor placed after token`);
+        return result;
+      }
+    }
+
+    // Fallback: Posición no encontrada, crear cursor independiente
+    console.log(`🔍 Position ${position} not found relative to any token, creating standalone INSERT cursor`);
+    return this.createStandaloneInsertCursor(result, position, cursorClass);
+  }
+
+  /**
+   * Divide un token para insertar cursor INSERT entre caracteres
+   */
+  splitTokenForInsert(token, position, cursorClass) {
+    const tokens = [];
+    const value = token.value || '';
+    const relativePos = position - token.start;
+
+    // Validación
+    if (relativePos <= 0 || relativePos >= value.length) {
+      console.log(`⚠️ Invalid INSERT cursor position ${position} in token [${token.start}-${token.end}]`);
+      return [token]; // Devolver token original si la posición es inválida
+    }
+
+    // Parte ANTES del cursor (desde inicio hasta posición)
+    const beforePart = value.substring(0, relativePos);
+    const beforeToken = this.createToken(
+      token.type,
+      beforePart,
+      token.start,
+      token.start + relativePos,
+      token
+    );
+    tokens.push(beforeToken);
+    console.log(`📝 Before INSERT cursor: "${beforePart}"`);
+
+    // Cursor INSERT (línea vertical entre caracteres)
+    const cursorToken = this.createToken('cursor', '', position, position);
+    cursorToken.cursor = cursorClass;
+    tokens.push(cursorToken);
+    console.log(`📍 INSERT cursor placed between characters`);
+
+    // Parte DESPUÉS del cursor (desde posición hasta final)
+    const afterPart = value.substring(relativePos);
+    const afterToken = this.createToken(
+      token.type,
+      afterPart,
+      position,
+      token.end,
+      token
+    );
+    tokens.push(afterToken);
+    console.log(`📝 After INSERT cursor: "${afterPart}"`);
+
+    return tokens;
+  }
+
+  /**
+   * Crea un cursor INSERT independiente cuando no se encuentra en ningún token
+   */
+  createStandaloneInsertCursor(result, position, cursorClass) {
+    // Encontrar dónde insertar el cursor
+    let insertIndex = 0;
+    for (let i = 0; i < result.length; i++) {
+      if (result[i].start > position) {
+        insertIndex = i;
+        break;
+      }
+      insertIndex = i + 1;
+    }
+
+    // Crear token de cursor INSERT vacío
+    const cursorToken = this.createToken('cursor', '', position, position);
+    cursorToken.cursor = cursorClass;
+    result.splice(insertIndex, 0, cursorToken);
+
+    console.log(`✅ Standalone INSERT cursor inserted at index ${insertIndex}`);
+    return result;
+  }
+
+  // DESACTIVADO: Método complejo problemático - usar applySimpleCursor en su lugar
+  applyCursor_OLD_BROKEN(tokens, position, cursorClass) {
     const result = [...tokens];
     let cursorPlaced = false;
 
@@ -167,46 +442,50 @@ class VisualEffectsProcessor {
         const token = result[i];
 
         // Handle cursor within a token (only simple tokens now)
-        // PRIORITIZE tokens that START at the cursor position over those that END at it
-        if (token.start <= position && position <= token.end && !token.isComplex) {
+        // Check if cursor position falls within this token
+        if (token.start <= position && position < token.end && !token.isComplex) {
+          // NORMAL MODE: Cursor ON character (position < token.end ensures we're not at boundary)
           console.log(`🎯 Found candidate token ${i} for position ${position}: [${token.start}-${token.end}]`);
-
-          // Different behavior for Normal vs Insert mode at token boundaries
-          if (position === token.end) {
-            if (cursorClass === 'cursor') {
-              // NORMAL MODE: Prefer token that STARTS at this position (cursor ON character)
-              console.log(`⏭️ [NORMAL] Skipping token ${i} - cursor is at end boundary, looking for token that starts here`);
-              continue; // Skip this token and look for one that starts at this position
-            } else if (cursorClass === 'cursor-insert') {
-              // INSERT MODE: Can place cursor at end of token (cursor BETWEEN characters)
-              console.log(`✅ [INSERT] Processing token ${i} - cursor can be at end boundary in insert mode`);
-              // Continue processing this token for insert mode
+        } else if (token.start <= position && position === token.end && !token.isComplex) {
+          // Handle boundary case: cursor exactly at token end
+          if (cursorClass === 'cursor-insert') {
+            // INSERT MODE: Can place cursor at end of token (cursor BETWEEN characters)
+            console.log(`✅ [INSERT] Processing boundary token ${i} for position ${position}: [${token.start}-${token.end}]`);
+          } else {
+            // NORMAL MODE: Skip tokens that end exactly at cursor position unless it's a single-char token
+            if (token.end - token.start === 1) {
+              console.log(`🎯 [NORMAL] Processing single-char token ${i} for position ${position}: [${token.start}-${token.end}]`);
+            } else {
+              console.log(`⏭️ [NORMAL] Skipping boundary token ${i} - cursor at end boundary: [${token.start}-${token.end}]`);
+              continue;
             }
           }
+        } else {
+          continue; // Token doesn't contain cursor position
+        }
 
-          console.log(`🎯 Processing simple token ${i} for position ${position}: [${token.start}-${token.end}]`);
+        console.log(`🎯 Processing simple token ${i} for position ${position}: [${token.start}-${token.end}]`);
 
-          if (typeof token.canBeSplit === 'function' && !token.canBeSplit()) {
-            console.log(`⚡ Token ${i} canBeSplit=false, but forcing split for cursor precision`);
-            // Simple token that shouldn't be split (like property, selector)
-            // BUT for cursor positioning, we ALWAYS want character-level precision
-            // so we split despite canBeSplit = false
-            const newTokens = this.splitTokenForCursor(token, position, cursorClass);
-            result.splice(i, 1, ...newTokens);
-            i += newTokens.length - 1; // Adjust index for added tokens
-            cursorPlaced = true;
-            console.log(`✅ Successfully split token ${i} (canBeSplit=false) into ${newTokens.length} tokens`);
-            break;
-          } else {
-            console.log(`🔄 Splitting normal token ${i}`);
-            // Normal token - split as usual
-            const newTokens = this.splitTokenForCursor(token, position, cursorClass);
-            result.splice(i, 1, ...newTokens);
-            i += newTokens.length - 1; // Adjust index for added tokens
-            cursorPlaced = true;
-            console.log(`✅ Successfully split normal token ${i} into ${newTokens.length} tokens`);
-            break;
-          }
+        if (typeof token.canBeSplit === 'function' && !token.canBeSplit()) {
+          console.log(`⚡ Token ${i} canBeSplit=false, but forcing split for cursor precision`);
+          // Simple token that shouldn't be split (like property, selector)
+          // BUT for cursor positioning, we ALWAYS want character-level precision
+          // so we split despite canBeSplit = false
+          const newTokens = this.splitTokenForCursor(token, position, cursorClass);
+          result.splice(i, 1, ...newTokens);
+          i += newTokens.length - 1; // Adjust index for added tokens
+          cursorPlaced = true;
+          console.log(`✅ Successfully split token ${i} (canBeSplit=false) into ${newTokens.length} tokens`);
+          break;
+        } else {
+          console.log(`🔄 Splitting normal token ${i}`);
+          // Normal token - split as usual
+          const newTokens = this.splitTokenForCursor(token, position, cursorClass);
+          result.splice(i, 1, ...newTokens);
+          i += newTokens.length - 1; // Adjust index for added tokens
+          cursorPlaced = true;
+          console.log(`✅ Successfully split normal token ${i} into ${newTokens.length} tokens`);
+          break;
         }
       }
     }
@@ -570,6 +849,13 @@ class VisualEffectsProcessor {
 
     // Cursor character
     const cursorCharIndex = cursorPosition - token.start;
+
+    // Validate that cursor position is within token bounds
+    if (cursorCharIndex < 0 || cursorCharIndex >= value.length) {
+      console.log(`⚠️ Cursor position ${cursorPosition} is outside token bounds [${token.start}-${token.end}], char index: ${cursorCharIndex}`);
+      return [token]; // Return original token if position is invalid
+    }
+
     const cursorChar = value.charAt(cursorCharIndex);
 
     if (cursorChar) {
@@ -584,17 +870,12 @@ class VisualEffectsProcessor {
       cursorToken.cursor = cursorClass;
       tokens.push(cursorToken);
       console.log(`✂️ Created cursor token: [${cursorToken.start}-${cursorToken.end}] "${cursorToken.value}" with cursor class: ${cursorClass}`);
-    } else if (cursorClass === 'cursor-insert') {
-      // For insert mode, create an empty cursor token at the position
-      const insertCursor = this.createToken('cursor', '', cursorPosition, cursorPosition);
-      insertCursor.cursor = cursorClass;
-      tokens.push(insertCursor);
-      console.log(`✂️ Created insert cursor token: [${insertCursor.start}-${insertCursor.end}] (empty) with cursor class: ${cursorClass}`);
-    } else if (cursorClass === 'cursor' && cursorCharIndex >= value.length) {
-      // Normal mode at end of token - this shouldn't happen with our new logic, but just in case
-      console.log(`⚠️ [NORMAL] Cursor at end of token - this should be handled by a different token`);
     } else {
-      console.log(`⚠️ No cursor character found at position ${cursorPosition} in token value "${value}" (index: ${cursorCharIndex})`);
+      // This shouldn't happen with the validation above, but as fallback
+      console.log(`⚠️ Empty character at position ${cursorPosition}, creating minimal cursor token`);
+      const fallbackCursor = this.createToken(token.type, '?', cursorPosition, cursorPosition + 1, token);
+      fallbackCursor.cursor = cursorClass;
+      tokens.push(fallbackCursor);
     }
 
     // After cursor
@@ -692,7 +973,13 @@ class TokenRenderer {
   }
 
   renderToken(token) {
-    // Handle ComplexVimToken with nested structure
+    // PRIORITY 1: Use pre-rendered HTML if available (from Complex tokens)
+    if (token.preRenderedHtml) {
+      console.log(`🎨 Using pre-rendered HTML for token ${token.type}`);
+      return token.preRenderedHtml;
+    }
+
+    // PRIORITY 2: Handle ComplexVimToken with nested structure
     if (token.isComplex && typeof token.applyVimEffects === 'function') {
       // Check if this token has partial cursor
       if (token.hasPartialCursor && typeof token.applyCursorWithPosition === 'function') {
@@ -930,8 +1217,8 @@ class NeovimModeSimulator {
 
 // Export for ES module usage
 export {
-    NeovimModeSimulator as NeovimSimulator // Export with alias for convenience
-    ,
-    TokenRenderer, VisualEffectsProcessor
+    NeovimModeSimulator as NeovimSimulator, // Export with alias for convenience
+    TokenRenderer,
+    VisualEffectsProcessor
 };
 

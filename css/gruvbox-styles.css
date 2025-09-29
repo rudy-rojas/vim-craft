@@ -446,7 +446,7 @@ textarea.form-control {
 
 /* CSS Units and Important */
 .token.important {
-  color: #e2777a;
+  /* color: #e2777a; */
   /* font-weight: bold; */
 }
 
@@ -456,11 +456,11 @@ textarea.form-control {
 
 /* HTML Tags */
 .token.tag .token.tag {
-  color: #e2777a;
+  /* color: #e2777a;  No aplicar*/
 }
 
 .token.tag .token.punctuation {
-  color: #e2777a;
+  /* color: #e2777a; */
 }
 
 /* HTML Attributes */
@@ -474,7 +474,7 @@ textarea.form-control {
 }
 
 .token.attr-value .token.punctuation {
-  color: #7ec699;
+  /* color: #7ec699; */
 }
 
 /* HTML Entities */

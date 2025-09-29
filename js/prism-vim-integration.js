@@ -249,7 +249,8 @@ class ComplexVimToken extends VimToken {
     }
 
     console.log('🖺 Using complex token structure cursor rendering');
-    const result = this.renderTokenStructureWithCursor(this.nestedStructure, cursorPosition, cursorClass);
+    const cursorApplied = {applied: false}; // Track cursor application state
+    const result = this.renderTokenStructureWithCursor(this.nestedStructure, cursorPosition, cursorClass, this.start, cursorApplied);
     console.log('🖺 Complex structure cursor result:', {
       hasResult: !!result,
       length: result?.length || 0,
@@ -356,7 +357,12 @@ class ComplexVimToken extends VimToken {
   /**
    * Recursively render token structure with character-level cursor
    */
-  renderTokenStructureWithCursor(structure, cursorPosition, cursorClass, currentPos = this.start) {
+  renderTokenStructureWithCursor(structure, cursorPosition, cursorClass, currentPos = this.start, cursorApplied) {
+    // Ensure cursorApplied has a valid default value
+    if (!cursorApplied) {
+      cursorApplied = {applied: false};
+    }
+
     if (typeof structure === 'string') {
       let result = '';
 
@@ -365,17 +371,19 @@ class ComplexVimToken extends VimToken {
         const char = structure[i];
         const escapedChar = this.escapeHtml(char);
 
-        if (charPos === cursorPosition) {
+        if (charPos === cursorPosition && cursorApplied && !cursorApplied.applied) {
           result += `<span class="${cursorClass}">${escapedChar}</span>`;
+          cursorApplied.applied = true; // Mark cursor as applied
         } else {
           result += escapedChar;
         }
       }
 
-      // Handle cursor at the exact end of the string (Insert mode)
+      // Handle cursor at the exact end of the string (Insert mode ONLY)
       const stringEnd = currentPos + structure.length;
-      if (cursorPosition === stringEnd) {
+      if (cursorPosition === stringEnd && cursorClass === 'cursor-insert' && cursorApplied && !cursorApplied.applied) {
         result += `<span class="${cursorClass}"></span>`;
+        cursorApplied.applied = true; // Mark cursor as applied
       }
 
       return result;
@@ -398,10 +406,10 @@ class ComplexVimToken extends VimToken {
       let pos = currentPos;
 
       if (typeof structure.content === 'string') {
-        content = this.renderTokenStructureWithCursor(structure.content, cursorPosition, cursorClass, pos);
+        content = this.renderTokenStructureWithCursor(structure.content, cursorPosition, cursorClass, pos, cursorApplied);
       } else if (Array.isArray(structure.content)) {
         for (const item of structure.content) {
-          const itemContent = this.renderTokenStructureWithCursor(item, cursorPosition, cursorClass, pos);
+          const itemContent = this.renderTokenStructureWithCursor(item, cursorPosition, cursorClass, pos, cursorApplied);
           content += itemContent;
 
           // Update position based on the actual content length (recursive calculation)
@@ -409,11 +417,12 @@ class ComplexVimToken extends VimToken {
         }
       }
 
-      // Handle cursor at the exact end of this token structure (Insert mode)
+      // Handle cursor at the exact end of this token structure (Insert mode ONLY) and ONLY if not already applied
       const tokenLength = this.calculateContentLength(structure);
       const tokenEnd = currentPos + tokenLength;
-      if (cursorPosition === tokenEnd) {
+      if (cursorPosition === tokenEnd && cursorClass === 'cursor-insert' && cursorApplied && !cursorApplied.applied) {
         content += `<span class="${cursorClass}"></span>`;
+        cursorApplied.applied = true; // Mark cursor as applied
       }
 
       return `<span class="${classes.join(' ')}">${content}</span>`;
