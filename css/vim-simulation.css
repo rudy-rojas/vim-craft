@@ -3,7 +3,52 @@
    Custom styles for simulating Vim modes and behaviors
    ======================================== */
 
-/* Cursor styles */
+/* Enhanced cursor styles with character overlay */
+.cursor-overlay {
+  position: relative;
+  display: inline-block;
+}
+
+.cursor-char-original {
+  /* Original character with PrismJS colors - visible when cursor is "off" */
+  position: relative;
+  z-index: 1;
+}
+
+.cursor-char-overlay {
+  /* Duplicated character with cursor background - visible when cursor is "on" */
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--fg0);
+  color: var(--bg0-hard) !important;
+  z-index: 2;
+  animation: cursor-overlay-blink 1s infinite;
+}
+
+.cursor-char-overlay-dark {
+  /* Duplicated character with cursor background and dark text for light tokens */
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--fg0);
+  z-index: 2;
+  animation: cursor-overlay-blink 1s infinite;
+  /* Force dark text for better contrast on light-colored tokens */
+  color: #2d2d2d !important;
+}
+
+/* Enhanced cursor animation that shows/hides the overlay */
+@keyframes cursor-overlay-blink {
+  0%, 50% {
+    opacity: 1; /* Show overlay (cursor visible) */
+  }
+  51%, 100% {
+    opacity: 0; /* Hide overlay (show original character) */
+  }
+}
+
+/* Fallback for old cursor style (backward compatibility) */
 .cursor {
   background: var(--fg0);
   color: var(--bg0-hard);

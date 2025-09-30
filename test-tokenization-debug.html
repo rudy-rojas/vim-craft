@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tokenization Debug Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .debug-output { background: #f5f5f5; padding: 10px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Tokenization Integrity Debug Test</h1>
+    <div id="test-results"></div>
+
+    <script type="module">
+        // Import the modules
+        import { NeovimModeSimulator } from './js/neovim-simulator.js';
+
+        // Test cases for different scenarios
+        const testCases = [
+            {
+                name: "Simple JavaScript",
+                language: "javascript",
+                code: `function hello() {
+    console.log("world");
+}`,
+                cursorPosition: 10 // Position at 'h' in hello
+            },
+            {
+                name: "Complex JavaScript with nested tokens",
+                language: "javascript",
+                code: `const obj = {
+    method: function(param) {
+        return param.property;
+    }
+};`,
+                cursorPosition: 25 // Position at 'f' in function
+            },
+            {
+                name: "TypeScript with complex syntax",
+                language: "typescript",
+                code: `interface User<T> {
+    name: string;
+    data: T;
+}`,
+                cursorPosition: 15 // Position at 'U' in User
+            }
+        ];
+
+        const resultsDiv = document.getElementById('test-results');
+        const simulator = new NeovimModeSimulator();
+
+        // Override console.log to capture debug output
+        const debugLogs = [];
+        const originalLog = console.log;
+        console.log = (...args) => {
+            debugLogs.push(args);
+            originalLog(...args);
+        };
+
+        // Run tests
+        for (const testCase of testCases) {
+            debugLogs.length = 0; // Clear previous logs
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result';
+            resultDiv.innerHTML = `<h3>${testCase.name}</h3>`;
+
+            try {
+                // Run the simulation in normal mode
+                const result = simulator.simulate(
+                    testCase.code,
+                    'normal',
+                    testCase.cursorPosition,
+                    testCase.cursorPosition,
+                    testCase.language
+                );
+
+                // Filter debug logs for tokenization integrity
+                const tokenizationLogs = debugLogs.filter(log =>
+                    log.some(arg =>
+                        typeof arg === 'string' &&
+                        (arg.includes('TOKENIZATION DEBUG') || arg.includes('TOKEN INTEGRITY'))
+                    )
+                );
+
+                const debugOutput = document.createElement('div');
+                debugOutput.className = 'debug-output';
+                debugOutput.textContent = tokenizationLogs.map(log =>
+                    log.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(' ')
+                ).join('\n\n');
+
+                resultDiv.appendChild(debugOutput);
+
+            } catch (error) {
+                resultDiv.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // Restore original console.log
+        console.log = originalLog;
+    </script>
+</body>
+</html>
